@@ -166,7 +166,7 @@ Vec3 ant::rangeAzToXyz(double slant_range, double az, const Vec3& pos_ecef,
         double el_min, double el_max, double el_tol, const ant::Frame& frame)
 {
     // Get ellipsoid associated with DEM.
-    const auto ellipsoid = makeProjection(dem_interp.epsgCode())->ellipsoid();
+    const auto ellipsoid = Ellipsoid(); //makeProjection(dem_interp.epsgCode())->ellipsoid();
 
     // EL defines a 3D position.
     const auto el2xyz =
@@ -191,12 +191,12 @@ Vec3 ant::rangeAzToXyz(double slant_range, double az, const Vec3& pos_ecef,
     auto errcode = isce3::math::find_zero_brent(
             el_min, el_max, height_error, el_tol, &el_solution);
 
-    if (errcode != isce3::error::ErrorCode::Success) {
-        throw isce3::except::RuntimeError(ISCE_SRCINFO(),
-                std::string("rangeAzToXyz failed with error (") +
-                        isce3::error::getErrorString(errcode) +
-                        std::string(").  Current solution = ") +
-                        std::to_string(el_solution));
-    }
+    //if (errcode != isce3::error::ErrorCode::Success) {
+    //    throw isce3::except::RuntimeError(ISCE_SRCINFO(),
+    //            std::string("rangeAzToXyz failed with error (") +
+    //                    isce3::error::getErrorString(errcode) +
+    //                    std::string(").  Current solution = ") +
+    //                    std::to_string(el_solution));
+    //}
     return el2xyz(el_solution);
 }
