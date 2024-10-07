@@ -38,13 +38,13 @@ const int SINC_SUB = 8192;
 dataInterpMethod parseDataInterpMethod(const std::string & method);
 
 /** Semi-major axis for WGS84 */
-const double EarthSemiMajorAxis = 6378137.0;
+const double EarthSemiMajorAxis = 6051000.0; //6378137.0;
 
 /** Eccentricity^2 for WGS84 derived from inverse flattening 298.257223563 */
-const double EarthEccentricitySquared = 0.006694379990141317;
+const double EarthEccentricitySquared = 0.0; //0.006694379990141317;
 
 /** Spin rate of Earth used for ECI/ECEF conversions, rad/s */
-constexpr static double EarthSpinRate = 7.292115024135738e-5;
+constexpr static double EarthSpinRate = -2.9924061259999999e-7; //7.292115024135738e-5;
 
 /** Speed of light in vacuum (m/s) */
 constexpr static double speed_of_light = 299792458.0;
