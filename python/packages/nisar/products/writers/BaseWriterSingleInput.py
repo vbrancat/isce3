@@ -826,7 +826,7 @@ class BaseWriterSingleInput():
 
             # check if dataset contains a string. If so, read it using method
             # `asstr()``
-            if h5py.check_string_dtype(input_h5_dataset_obj.dtype):
+            if h5py.check_string_dtype(input_h5_dataset_obj.dtype) and input_h5_dataset_obj.shape == ():
                 # use asstr() to read the dataset
                 data = str(input_h5_dataset_obj.asstr()[...])
 
