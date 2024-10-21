@@ -353,6 +353,7 @@ def run_geocode_cov(cfg, hdf5_obj, root_ds,
                      hdf5_obj, root_ds,
                      yds, xds,
                      'mask',
+                     fill_value=255,
                      compute_stats=False)
 
     # save rtc
