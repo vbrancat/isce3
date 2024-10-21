@@ -562,7 +562,7 @@ def prep_gslc_dataset(cfg, dst, dst_h5):
         descr = f'GSLC mask'
         gslc_output_options['fillvalue'] = 255
         _create_datasets(dst_grp, shape, np.ubyte, 'mask',
-                         descr=descr, units='', grids="projection",
+                         descr=descr, units=None, grids="projection",
                          long_name=long_name, yds=yds, xds=xds,
                          fill_value=255, valid_min=0,
                          **gslc_output_options)
@@ -639,7 +639,7 @@ def _create_datasets(dst_grp, shape, ctype, dataset_name,
         ds.attrs["_FillValue"] = fill_value
 
     if valid_min is not None:
-        ds.attrs["_valid_min"] = valid_min
+        ds.attrs["valid_min"] = valid_min
 
 
 def _add_polarization_list(dst_h5, dst, common_parent_path, frequency, pols):
@@ -810,10 +810,6 @@ def set_get_geo_info(hdf5_obj, root_ds, geo_grid, z_vect=None,
                  epsg_code < 32761)):
             # Set up grid mapping
             projds.attrs['utm_zone_number'] = epsg_code % 100
-            projds.attrs["longitude_of_central_meridian"] = srs.GetProjParm(
-                osr.SRS_PP_CENTRAL_MERIDIAN)
-            projds.attrs["scale_factor_at_central_meridian"] = srs.GetProjParm(
-                osr.SRS_PP_SCALE_FACTOR)
 
         # Polar Stereo North
         elif epsg_code == 3413:

@@ -656,8 +656,8 @@ class SLC(h5py.File):
         t = np.asarray(attitude.time)
         d = g.require_dataset("time", t.shape, t.dtype, data=t)
         d.attrs["description"] = np.bytes_("Time vector record. This record"
-            " contains the time corresponding to attitude and quaternion"
-            " records")
+                                           " contains the time since UTC epoch"
+                                           " corresponding to attitude and quaternion records")
         d.attrs["units"] = np.bytes_(time_units(attitude.reference_epoch))
         qv = np.array([[q.w, q.x, q.y, q.z] for q in attitude.quaternions])
         d = g.require_dataset("quaternions", qv.shape, qv.dtype, data=qv)

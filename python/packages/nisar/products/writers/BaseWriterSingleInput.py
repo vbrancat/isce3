@@ -9,7 +9,7 @@ from nisar.products.granule_id import get_polarization_code, format_datetime
 from nisar.products.readers import open_product
 from nisar.h5 import cp_h5_meta_data
 
-DATE_TIME_METADATA_FORMAT = '%Y-%m-%dT%H:%M:%S.%fZ'
+DATE_TIME_METADATA_FORMAT = '%Y-%m-%dT%H:%M:%S'
 
 
 def get_granule_id_single_input(input_obj, partial_granule_id, freq_pols_dict):
@@ -573,7 +573,8 @@ class BaseWriterSingleInput():
 
         self.copy_from_input(
             'identification/trackNumber',
-            format_function=np.uint8)
+            format_function=np.uint32)
+            # See: https://github-fn.jpl.nasa.gov/NISAR-ADT/NISAR_PIX/pull/237 <- This comment needs to be removed before merging
 
         self.copy_from_input(
             'identification/frameNumber',
