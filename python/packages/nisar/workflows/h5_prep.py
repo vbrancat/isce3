@@ -550,7 +550,7 @@ def prep_gslc_dataset(cfg, dst, dst_h5):
 
         # create geocoded SLC datasets for polarizations of current frequency
         for polarization in pol_list:
-            long_name = f'geocoded single-look complex image {polarization}'
+            long_name = f'Geocoded single-look complex image {polarization}'
             descr = f'Focused SLC image ({polarization})'
             _create_datasets(dst_grp, shape, ctype, polarization,
                              descr=descr, units='', grids="projection",
@@ -558,7 +558,7 @@ def prep_gslc_dataset(cfg, dst, dst_h5):
                              fill_value=complex_fill_value, **gslc_output_options)
 
         # create geocoded mask for geocoded SLC datasets
-        long_name = f'geocoded mask of single-look complex image'
+        long_name = f'Geocoded mask of single-look complex image'
         descr = f'GSLC mask'
         gslc_output_options['fillvalue'] = 255
         _create_datasets(dst_grp, shape, np.ubyte, 'mask',
