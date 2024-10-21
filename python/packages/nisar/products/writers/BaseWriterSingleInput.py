@@ -573,8 +573,7 @@ class BaseWriterSingleInput():
 
         self.copy_from_input(
             'identification/trackNumber',
-            format_function=np.uint32)
-            # See: https://github-fn.jpl.nasa.gov/NISAR-ADT/NISAR_PIX/pull/237 <- This comment needs to be removed before merging
+            format_function=np.uint8)
 
         self.copy_from_input(
             'identification/frameNumber',
