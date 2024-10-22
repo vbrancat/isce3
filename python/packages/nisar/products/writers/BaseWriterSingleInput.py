@@ -701,7 +701,7 @@ class BaseWriterSingleInput():
         # if `data` is a numpy fixed-length string, remove trailing null
         # characters
         if ((isinstance(data, np.bytes_) or isinstance(data, np.ndarray))
-                and (data.dtype.char == 'S')):
+                and (data.dtype.char == 'S') and (data.shape == ())):
             data = np.bytes_(data)
             try:
                 data = data.decode()
