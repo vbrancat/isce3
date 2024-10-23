@@ -571,9 +571,16 @@ class BaseWriterSingleInput():
             'identification/absoluteOrbitNumber',
             format_function=np.uint32)
 
-        self.copy_from_input(
-            'identification/trackNumber',
-            format_function=np.uint8)
+        try:
+            self.copy_from_input(
+                'identification/trackNumber',
+                format_function=np.uint32)
+        except ValueError:
+            # Handle the case in which the input product contains a
+            # trackNumber that cannot be converted to a numeric value
+            # Example: UAVSAR flight ID (FLID)
+            self.copy_from_input(
+                'identification/trackNumber')
 
         self.copy_from_input(
             'identification/frameNumber',
