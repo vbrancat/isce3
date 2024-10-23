@@ -84,12 +84,12 @@ class Identification(object):
         self.isUrgentObservation = None
         self.plannedDatatake = None
         self.plannedObservation = None
-        
-        
-        
+
+
+
         import h5py
 
-        #Any logging context 
+        #Any logging context
         if context is None:
             context = { 'info': journal.info('nisar.reader'),
                         'debug': journal.debug('nisar.reader'),
@@ -100,11 +100,11 @@ class Identification(object):
         #User has an open HDF5 file and is looking into it
         if isinstance(inobj, h5py.Group):
             self.unpack(inobj[path])
-        #User provides HDF5 file and path inside it 
+        #User provides HDF5 file and path inside it
         elif isinstance(inobj, str):
             with h5py.File(inobj, 'r') as fid:
                 self.unpack(fid, path)
-        
+
 
     def unpack(self, h5grp):
         '''
@@ -113,10 +113,10 @@ class Identification(object):
         from nisar.h5 import extractScalar, bytestring, extractWithIterator
         import isce3
 
-        self.missionId = extractScalar(h5grp, 'missionId', 
+        self.missionId = extractScalar(h5grp, 'missionId',
                                       bytestring, self.context['info'],
                                       'Mission could not be identified')
-        self.productType = extractScalar(h5grp, 'productType', 
+        self.productType = extractScalar(h5grp, 'productType',
                                       bytestring, self.context['error'],
                                       'Product type could not be determined')
         self.absoluteOrbitNumber = extractScalar(h5grp, 'absoluteOrbitNumber',

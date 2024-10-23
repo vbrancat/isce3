@@ -365,6 +365,7 @@ class L1InSARWriter(InSARBaseWriter):
                 ref_rslc_slant_range[rg_start::rg_skip][:off_width]
             offset_zero_doppler_time = \
                 ref_rslc_zero_doppler_time[az_start::az_skip][:off_length]
+
             offset_zero_doppler_time_spacing = \
                 rslc_swaths_group["zeroDopplerTimeSpacing"][()] * az_skip
             offset_slant_range_spacing = \
@@ -449,8 +450,7 @@ class L1InSARWriter(InSARBaseWriter):
                                                  " the subswath number of that pixel in the reference RSLC."
                                                  " A value of '0' in either digit indicates an invalid sample"
                                                  " in the corresponding RSLC"),
-                                    fill_value=255,
-                                    long_name='Valid samples subswath mask')
+                                    fill_value=255)
             offset_group['mask'].attrs['valid_min'] = 0
             offset_group['mask'].attrs['valid_max'] = 55
 
@@ -612,8 +612,7 @@ class L1InSARWriter(InSARBaseWriter):
                                                  " the subswath number of that pixel in the reference RSLC."
                                                  " A value of '0' in either digit indicates an invalid sample"
                                                  " in the corresponding RSLC"),
-                                    fill_value=255,
-                                    long_name='Valid samples subswath mask')
+                                    fill_value=255)
             igram_group['mask'].attrs['valid_min'] = 0
             igram_group['mask'].attrs['valid_max'] = 55
 
