@@ -663,6 +663,10 @@ class BaseWriterSingleInput():
 
         self.copy_from_input('identification/isDithered', default=False)
         self.copy_from_input('identification/isMixedMode', default=False)
+        self.copy_from_input('identification/isFullFrame',
+                             skip_if_not_present=True)
+        self.copy_from_input('identification/isJointObservation',
+                             skip_if_not_present=True)
 
         # Copy CRID from runconfig (defaults to "A10000")
         self.copy_from_runconfig(
