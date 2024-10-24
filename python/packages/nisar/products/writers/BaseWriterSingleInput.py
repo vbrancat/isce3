@@ -571,9 +571,16 @@ class BaseWriterSingleInput():
             'identification/absoluteOrbitNumber',
             format_function=np.uint32)
 
-        self.copy_from_input(
-            'identification/trackNumber',
-            format_function=np.uint8)
+        try:
+            self.copy_from_input(
+                'identification/trackNumber',
+                format_function=np.uint32)
+        except ValueError:
+            # Handle the case in which the input product contains a
+            # trackNumber that cannot be converted to a numeric value
+            # Example: UAVSAR flight ID (FLID)
+            self.copy_from_input(
+                'identification/trackNumber')
 
         self.copy_from_input(
             'identification/frameNumber',
@@ -613,7 +620,7 @@ class BaseWriterSingleInput():
 
         self.set_value(
             'identification/productSpecificationVersion',
-            '1.1.2')
+            '1.2.0')
 
         self.copy_from_input(
             'identification/lookDirection',
@@ -663,6 +670,10 @@ class BaseWriterSingleInput():
 
         self.copy_from_input('identification/isDithered', default=False)
         self.copy_from_input('identification/isMixedMode', default=False)
+        self.copy_from_input('identification/isFullFrame',
+                             skip_if_not_present=True)
+        self.copy_from_input('identification/isJointObservation',
+                             skip_if_not_present=True)
 
         # Copy CRID from runconfig (defaults to "A10000")
         self.copy_from_runconfig(

@@ -145,7 +145,7 @@ runconfig:
 
       elevation_antenna_pattern: include('eap_options', required=False)
 
-      noise_equivalent_sigma_zero: include('nesz_options', required=False)
+      noise_equivalent_backscatter: include('nesz_options', required=False)
 
       radio_frequency_interference: include('rfi_options', required=False)
 

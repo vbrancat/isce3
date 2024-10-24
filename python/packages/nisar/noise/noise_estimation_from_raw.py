@@ -39,8 +39,11 @@ class ZeroBandwidthNoiseWarning(Warning):
 
 
 @dataclass
-class NeszProduct:
-    """Noise Equivalent Sigma Zero (NESZ) Product.
+class NoiseEquivalentBackscatterProduct:
+    """Noise Equivalent Backscatter Product.
+
+    Conceptually the same as noise equivalent sigma zero (NESZ) but agnostic
+    with respect to the area normalization convention.
 
     Attributes
     ----------

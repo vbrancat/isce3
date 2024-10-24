@@ -3,16 +3,20 @@ from __future__ import annotations
 
 import h5py
 import journal
+import logging
 import pyre
 import re
 
-from nisar.noise import NeszProduct
+from nisar.noise import NoiseEquivalentBackscatterProduct
 from isce3.core import DateTime
 from isce3.core.types import ComplexFloat16Decoder, is_complex32
 
 from .SLCBase import SLCBase
 
 PRODUCT = 'RSLC'
+
+log = logging.getLogger("nisar.products.readers.RSLC")
+
 
 class RSLC(SLCBase, family='nisar.productreader.rslc'):
     """
@@ -115,10 +119,12 @@ class RSLC(SLCBase, family='nisar.productreader.rslc'):
             return is_complex32(h[slc_path])
 
 
-    def getNESZ(self, frequency=None, pol=None):
+    def getNoiseEquivalentBackscatter(self, frequency=None, pol=None):
         '''
-        Extract Noise Equivalent Sigma Zero (NESZ) product for a particular
-        frequency band and TxRx polarization.
+        Extract noise equivalent backscatter product for a particular
+        frequency band and TxRx polarization.  It's conceptually the same as
+        as noise equivalent sigma zero (NESZ) but agnostic with respect to the
+        area normalization convention.
 
         Parameters
         ----------
@@ -134,7 +140,7 @@ class RSLC(SLCBase, family='nisar.productreader.rslc'):
 
         Returns
         -------
-        nisar.noise.NeszProduct
+        nisar.noise.NoiseEquivalentBackscatterProduct
 
         '''
         # set frequency and pol
@@ -147,18 +153,50 @@ class RSLC(SLCBase, family='nisar.productreader.rslc'):
                 pol = pols[0]
             else:  # there exists a co-pol
                 pol = co_pol[0]
-        # set paths
-        grp_path = _join_paths(
-            self.CalibrationInformationPath, f'frequency{frequency}/nes0')
-        sr_path = f'{grp_path}/slantRange'
-        azt_path = f'{grp_path}/zeroDopplerTime'
-        nesz_path = f'{grp_path}/{pol}'
+
+        # Save typing...
+        cal, freq  = self.CalibrationInformationPath, f'frequency{frequency}'
+
+        # Set paths relative to cal group. Support three product spec versions.
+        # Keys correspond to the first tag of the NISAR PIX repo that implements
+        # the given data layout (though v0.0.0 doesn't exist and is just
+        # shorthand for the first ever version).
+        layouts = {
+            "v1.2.0": {
+                "noise": _h5join(cal, freq, "noiseEquivalentBackscatter", pol),
+                "time": _h5join(cal, freq, "noiseEquivalentBackscatter",
+                    "zeroDopplerTime"),
+                "range": _h5join(cal, freq, "noiseEquivalentBackscatter",
+                    "slantRange"),
+            },
+            "v1.0.0": {
+                "noise": _h5join(cal, freq, "nes0", pol),
+                "time": _h5join(cal, freq, "nes0", "zeroDopplerTime"),
+                "range": _h5join(cal, freq, "nes0", "slantRange"),
+            },
+            "v0.0.0": {
+                "noise": _h5join(cal, freq, pol, "nes0"),
+                "time": _h5join(cal, "zeroDopplerTime"),
+                "range": _h5join(cal, "slantRange"),
+            },
+        }
+
         # parse all fields for NESZ
         with h5py.File(self.filename, 'r', libver='latest', swmr=True) as fid:
-            nesz = fid[nesz_path][:]
-            sr = fid[sr_path][:]
-            azt = fid[azt_path][:]
-            units = fid[azt_path].attrs['units'].decode()
+            for version, paths in layouts.items():
+                if paths["noise"] in fid:
+                    break
+                log.warning("Couldn't find noise with RSLC schema "
+                    f"corresponding to tag {version} of NISAR_PIX.")
+            else:
+                raise IOError("Could not find noise layer in RSLC file.")
+
+            noise = fid[paths["noise"]][:]
+            sr = fid[paths["range"]][:]
+            azt_dset = fid[paths["time"]]
+            azt = azt_dset[:]
+            units = azt_dset.attrs['units'].decode()
+
         # datetime UTC pattern to look for in units to get epoch
         dt_pat = re.compile(
             '[0-9]{4}-[0-9]{2}-[0-9]{2}[T ][0-9]{2}:[0-9]{2}:[0-9]{2}(?:[.][0-9]{0,9})?'
@@ -170,13 +208,12 @@ class RSLC(SLCBase, family='nisar.productreader.rslc'):
             )
         utc_str = matches[0]
         epoch = DateTime(utc_str)
-        # build and return NESZ product
-        return NeszProduct(nesz, sr, azt, epoch, frequency, pol)
+        # build and return noise product
+        return NoiseEquivalentBackscatterProduct(noise, sr, azt, epoch,
+            frequency, pol)
 
 
-def _join_paths(path1: str, path2: str) -> str:
+def _h5join(*paths: str) -> str:
     """Join two paths to be used in HDF5"""
-    sep = '/'
-    if path1.endswith(sep):
-        sep = ''
-    return path1 + sep + path2
+    # avoid repeated path separators
+    return "/".join(path.rstrip("/") for path in paths)

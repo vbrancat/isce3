@@ -135,8 +135,8 @@ def test_run():
             'seconds since ')
 
         assert zero_doppler_time_dataset.attrs['description'].decode() == \
-            ('Zero doppler time dimension corresponding to source data'
-                ' processing information records')
+            ('Zero Doppler time since UTC epoch dimension corresponding to'
+             ' source data processing information records')
 
 
 def get_raster_geogrid(dataset_reference):

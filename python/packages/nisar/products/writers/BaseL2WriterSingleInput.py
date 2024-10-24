@@ -938,29 +938,49 @@ class BaseL2WriterSingleInput(BaseWriterSingleInput):
                 f'{crosstalk_parameter}',
                 skip_if_not_present=True)
 
-        luts_list = ['elevationAntennaPattern', 'nes0']
+        for abstract_lut in ("eap", "noise"):
 
-        for lut in luts_list:
-
-            # We only compute statistics for nes0
-            compute_stats = lut == 'nes0'
+            if abstract_lut == "eap":
+                old_name = new_name = "elevationAntennaPattern"
+                compute_stats = False
+            elif abstract_lut == "noise":
+                # Noise dataset was renamed in product spec v1.2.0.
+                old_name = "nes0"
+                new_name = "noiseEquivalentBackscatter"
+                compute_stats = True
+            else:
+                assert False, f"unexpected {abstract_lut=}"
 
             # geocode frequency dependent LUTs
             for frequency, pol_list in self.freq_pols_dict.items():
 
                 # The path below is only valid for RSLC products
-                # with product specification version 1.1.0 or above
+                # with product specification version 1.2.0 or above
                 success = self.geocode_lut(
                     '{PRODUCT}/metadata/calibrationInformation/'
-                    f'frequency{frequency}/{lut}',
+                    f'frequency{frequency}/{new_name}',
                     frequency=frequency,
                     output_ds_name_list=pol_list,
                     skip_if_not_present=True,
                     compute_stats=compute_stats)
 
+                # Try reading with the old name.
+                if not success and new_name != old_name:
+                    root = ('{PRODUCT}/metadata/calibrationInformation/'
+                        f'frequency{frequency}')
+                    success = self.geocode_lut(
+                        output_h5_group=f"{root}/{new_name}",
+                        input_h5_group=f"{root}/{old_name}",
+                        frequency=frequency,
+                        output_ds_name_list=pol_list,
+                        skip_if_not_present=True,
+                        compute_stats=compute_stats)
+
+                # Failed with these path schema, don't bother with other pols.
                 if not success:
                     break
 
+            # Succeeded with these path schema, don't bother trying the old one.
             if success:
                 continue
 
@@ -979,24 +999,24 @@ class BaseL2WriterSingleInput(BaseWriterSingleInput):
                         self.geocode_lut(
                             output_h5_group=('{PRODUCT}/metadata/'
                                              'calibrationInformation'
-                                             f'/frequency{frequency}/{lut}'),
+                                             f'/frequency{frequency}/{new_name}'),
                             input_h5_group=('{PRODUCT}/metadata/'
                                             'calibrationInformation'
                                             f'/frequency{frequency}/{pol}'),
                             frequency=list(self.freq_pols_dict.keys())[0],
-                            input_ds_name_list=[lut],
+                            input_ds_name_list=[old_name],
                             output_ds_name_list=pol,
                             skip_if_not_present=True,
                             compute_stats=compute_stats)
 
                         continue
 
-                    input_ds_name_list = [f'frequency{frequency}/{pol}/{lut}']
+                    input_ds_name_list = [f'frequency{frequency}/{pol}/{old_name}']
 
                     self.geocode_lut(
                         output_h5_group=('{PRODUCT}/metadata/'
                                          'calibrationInformation'
-                                         f'/frequency{frequency}/{lut}'),
+                                         f'/frequency{frequency}/{new_name}'),
                         input_h5_group=('{PRODUCT}/metadata/'
                                         'calibrationInformation'),
                         frequency=list(self.freq_pols_dict.keys())[0],

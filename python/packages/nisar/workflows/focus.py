@@ -11,7 +11,7 @@ import math
 import os
 from nisar.antenna import AntennaPattern, get_calib_range_line_idx
 from nisar.noise.noise_estimation_from_raw import (
-    est_noise_power_in_focus, NeszProduct)
+    est_noise_power_in_focus, NoiseEquivalentBackscatterProduct)
 from nisar.mixed_mode import (PolChannel, PolChannelSet, Band,
     find_overlapping_channel)
 from nisar.products.readers.antenna import AntennaParser
@@ -1867,8 +1867,8 @@ def focus(runconfig, runconfig_path=""):
             if idx_noise.size == 0:
                 log.warning(
                     'No noise-only range lines within the specified pulse '
-                    'interval. Skip noise estimation and set NESZ to zero.'
-                )
+                    'interval. Skip noise estimation and set noise equivalent '
+                    'backscatter to zero.')
                 sr_noise = np.array(rc_grid.slant_ranges)
                 pow_noise = np.zeros_like(sr_noise, dtype='f4')
             else: # there is at least one noise-only range line
@@ -1932,22 +1932,22 @@ def focus(runconfig, runconfig_path=""):
                 pow_noise, sr_noise = est_noise_power_in_focus(
                     data_noise, rc_grid.slant_ranges, sbsw_noise,
                     not uniform_pri, logger=log,
-                    **vars(cfg.processing.noise_equivalent_sigma_zero)
+                    **vars(cfg.processing.noise_equivalent_backscatter)
                 )
                 del data_noise
             # build NESZ product and dump into RSLC product per
             # frequency band and polarization
             # Given NESZ is estimated over entire AZ times, for the sake of
-            # compatability with RSCL spec, the final product
+            # compatability with RSLC spec, the final product
             # is converted from 1-D into 2-D by simply stacking 1-D
             # values twice. The AZ time limits is within raw data used in
             # the noise estimation.
             azt_lim_noise = raw_times[::raw_times.size - 1]
             pow_noise_2d = np.vstack([pow_noise, pow_noise])
-            nesz_prod = NeszProduct(
+            noise_prod = NoiseEquivalentBackscatterProduct(
                 pow_noise_2d, sr_noise, azt_lim_noise, grid_epoch, frequency,
                 pol)
-            slc.set_nesz(nesz_prod)
+            slc.set_noise(noise_prod)
             del pow_noise_2d, pow_noise, sr_noise
 
             del raw_clean
