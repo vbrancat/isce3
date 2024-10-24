@@ -354,7 +354,8 @@ def cp_geocode_meta(cfg, output_hdf5, dst):
                             'azimuthChirpWeighting',
                             'effectiveVelocity', 'rangeChirpWeighting']
         else:
-            exclude_args = ['nes0', 'elevationAntennaPattern']
+            exclude_args = ['noiseEquivalentBackscatter', 'nes0',
+                            'elevationAntennaPattern']
 
         cp_h5_meta_data(src_h5, dst_h5,
                         f'{src_meta_path}/processingInformation/parameters',
@@ -363,7 +364,8 @@ def cp_geocode_meta(cfg, output_hdf5, dst):
         # Copy calibrationInformation group
         exclude_args = []
         if is_insar:
-            exclude_args = ['nes0', 'elevationAntennaPattern']
+            exclude_args = ['noiseEquivalentBackscatter', 'nes0',
+                            'elevationAntennaPattern']
         for freq in freq_pols.keys():
             if dst in ['ROFF', 'GOFF']:
                 cal_path = f'{dst_meta_path}/calibrationInformation'

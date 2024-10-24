@@ -152,7 +152,7 @@ runconfig:
                 # 5 MHz bandwidth has 6 MHz sample rate -> c / 2 / 6e6 spacing
                 spacing: 24.982704833333333
 
-            noise_equivalent_sigma_zero:
+            noise_equivalent_backscatter:
                 # supported noise estimator algorithms:
                 # - MEE:  Min Eigenvalue Estimator, Default.
                 # - MVE: Min Variance Estimator

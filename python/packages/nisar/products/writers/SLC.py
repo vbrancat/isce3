@@ -1058,25 +1058,25 @@ class SLC(h5py.File):
                 "amplitude with respect to elevation angle", "radians^-1")
 
 
-    def set_nesz(self, nesz_prod):
+    def set_noise(self, noise_prod):
         """
-        Store the NESZ results that is noise power as a function of
-        slant range at mid az time per a desired frequency band and
-        TxRx polarization.
+        Store the noise power as a function of slant range at mid az time per a
+        desired frequency band and TxRx polarization.
 
         Parameters
         ----------
-        nesz_prod : nisar.noise.NeszProduct
+        noise_prod : nisar.noise.NoiseEquivalentBackscatterProduct
 
         """
         cal_grp = self.root.require_group("metadata/calibrationInformation")
-        nesz_grp = cal_grp.require_group(
-            f"frequency{nesz_prod.freq_band}/nes0")
+        noise_grp = cal_grp.require_group(
+            f"frequency{noise_prod.freq_band}/noiseEquivalentBackscatter")
         t, r = require_lut_axes(
-            nesz_grp, nesz_prod.ref_epoch, nesz_prod.az_time,
-            nesz_prod.slant_range, "calibration nes0 records"
+            noise_grp, noise_prod.ref_epoch, noise_prod.az_time,
+            noise_prod.slant_range,
+            "calibration noiseEquivalentBackscatter records"
             )
         write_dataset(
-            nesz_grp, nesz_prod.txrx_pol, np.float32, nesz_prod.power_linear,
-            "Noise equivalent sigma zero in linear scale", "1"
+            noise_grp, noise_prod.txrx_pol, np.float32, noise_prod.power_linear,
+            "Noise equivalent backscatter in linear scale (units of DN^2)", "1"
             )

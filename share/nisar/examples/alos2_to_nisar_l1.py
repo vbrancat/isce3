@@ -31,7 +31,8 @@ ALL_POLARIZATIONS_SET = set(['HH', 'HV', 'VV', 'VH', 'RH', 'RV'])
 
 CALIBRATION_FIELD_DICT = {
     'elevationAntennaPattern': 'Complex two-way elevation antenna pattern',
-    'nes0': 'Noise equivalent sigma zero'
+    'noiseEquivalentBackscatter': ('Noise equivalent backscatter in '
+                                    'linear scale (units of DN^2)')
 }
 
 
@@ -789,7 +790,7 @@ def update_calibration_information(fid, metadata, pol_list, frequency):
 
     for calibration_field, description in CALIBRATION_FIELD_DICT.items():
 
-        if calibration_field == 'nes0':
+        if calibration_field == 'noiseEquivalentBackscatter':
             data = np.full((calibration_zero_doppler_time_vector.size,
                             calibration_slantrange_vector.size),
                            metadata['NESZ'],

@@ -1435,7 +1435,7 @@
         <!-- End of antenna pattern -->
 
         <!-- Start of noise pattern -->
-        <integer name="/science/LSAR/GCOV/metadata/calibrationInformation/frequencyA/nes0/projection"
+        <integer name="/science/LSAR/GCOV/metadata/calibrationInformation/frequencyA/noiseEquivalentBackscatter/projection"
                  shape="scalar"
                  signed="false"
                  width="32">
@@ -1455,7 +1455,7 @@
                         utm_zone_number="UTM zone number"
                         lang="en">Product map grid projection: EPSG code, with additional projection information as HDF5 Attributes</annotation>
         </integer>
-        <real name="/science/LSAR/GCOV/metadata/calibrationInformation/frequencyA/nes0/yCoordinates"
+        <real name="/science/LSAR/GCOV/metadata/calibrationInformation/frequencyA/noiseEquivalentBackscatter/yCoordinates"
               shape="calibrationLength"
               width="64">
               <annotation app="conformance"
@@ -1467,7 +1467,7 @@
                           standard_name="projection_y_coordinate"
                           units="meters">Y coordinates in specified projection</annotation>
         </real>
-        <real name="/science/LSAR/GCOV/metadata/calibrationInformation/frequencyA/nes0/xCoordinates"
+        <real name="/science/LSAR/GCOV/metadata/calibrationInformation/frequencyA/noiseEquivalentBackscatter/xCoordinates"
               shape="calibrationWidth"
               width="64">
               <annotation app="conformance"
@@ -1479,7 +1479,7 @@
                           standard_name="projection_x_coordinate"
                           units="meters">X coordinates in specified projection</annotation>
         </real>
-        <real name="/science/LSAR/GCOV/metadata/calibrationInformation/frequencyA/nes0/HH"
+        <real name="/science/LSAR/GCOV/metadata/calibrationInformation/frequencyA/noiseEquivalentBackscatter/HH"
               shape="calibrationScaleShape"
               width="32">
           <annotation app="conformance"
@@ -1493,7 +1493,7 @@
                       grid_mapping="projection"
                       units="1">Noise equivalent backscatter in linear scale (units of DN^2)</annotation>
         </real>
-        <real name="/science/LSAR/GCOV/metadata/calibrationInformation/frequencyA/nes0/HV"
+        <real name="/science/LSAR/GCOV/metadata/calibrationInformation/frequencyA/noiseEquivalentBackscatter/HV"
               shape="calibrationScaleShape"
               width="32">
           <annotation app="conformance"
@@ -1507,7 +1507,7 @@
                       grid_mapping="projection"
                       units="1">Noise equivalent backscatter in linear scale (units of DN^2)</annotation>
         </real>
-        <real name="/science/LSAR/GCOV/metadata/calibrationInformation/frequencyA/nes0/VH"
+        <real name="/science/LSAR/GCOV/metadata/calibrationInformation/frequencyA/noiseEquivalentBackscatter/VH"
               shape="calibrationScaleShape"
               width="32">
           <annotation app="conformance"
@@ -1521,7 +1521,7 @@
                       grid_mapping="projection"
                       units="1">Noise equivalent backscatter in linear scale (units of DN^2)</annotation>
         </real>
-        <real name="/science/LSAR/GCOV/metadata/calibrationInformation/frequencyA/nes0/VV"
+        <real name="/science/LSAR/GCOV/metadata/calibrationInformation/frequencyA/noiseEquivalentBackscatter/VV"
               shape="calibrationScaleShape"
               width="32">
           <annotation app="conformance"
@@ -1535,7 +1535,7 @@
                       grid_mapping="projection"
                       units="1">Noise equivalent backscatter in linear scale (units of DN^2)</annotation>
         </real>
-        <real name="/science/LSAR/GCOV/metadata/calibrationInformation/frequencyA/nes0/RH"
+        <real name="/science/LSAR/GCOV/metadata/calibrationInformation/frequencyA/noiseEquivalentBackscatter/RH"
               shape="calibrationScaleShape"
               width="32">
           <annotation app="conformance"
@@ -1549,7 +1549,7 @@
                       grid_mapping="projection"
                       units="1">Noise equivalent backscatter in linear scale (units of DN^2)</annotation>
         </real>
-        <real name="/science/LSAR/GCOV/metadata/calibrationInformation/frequencyA/nes0/RV"
+        <real name="/science/LSAR/GCOV/metadata/calibrationInformation/frequencyA/noiseEquivalentBackscatter/RV"
               shape="calibrationScaleShape"
               width="32">
           <annotation app="conformance"
@@ -1563,7 +1563,7 @@
                       grid_mapping="projection"
                       units="1">Noise equivalent backscatter in linear scale (units of DN^2)</annotation>
         </real>
-        <real name="/science/LSAR/GCOV/metadata/calibrationInformation/frequencyB/nes0/HH"
+        <real name="/science/LSAR/GCOV/metadata/calibrationInformation/frequencyB/noiseEquivalentBackscatter/HH"
               shape="calibrationScaleShape"
               width="32">
           <annotation app="conformance"
@@ -1577,7 +1577,7 @@
                       grid_mapping="projection"
                       units="1">Noise equivalent backscatter in linear scale (units of DN^2)</annotation>
         </real>
-        <integer name="/science/LSAR/GCOV/metadata/calibrationInformation/frequencyB/nes0/projection"
+        <integer name="/science/LSAR/GCOV/metadata/calibrationInformation/frequencyB/noiseEquivalentBackscatter/projection"
                  shape="scalar"
                  signed="false"
                  width="32">
@@ -1597,7 +1597,7 @@
                         utm_zone_number="UTM zone number"
                         lang="en">Product map grid projection: EPSG code, with additional projection information as HDF5 Attributes</annotation>
         </integer>
-        <real name="/science/LSAR/GCOV/metadata/calibrationInformation/frequencyB/nes0/yCoordinates"
+        <real name="/science/LSAR/GCOV/metadata/calibrationInformation/frequencyB/noiseEquivalentBackscatter/yCoordinates"
               shape="calibrationLength"
               width="64">
               <annotation app="conformance"
@@ -1609,7 +1609,7 @@
                           standard_name="projection_y_coordinate"
                           units="meters">Y coordinates in specified projection</annotation>
         </real>
-        <real name="/science/LSAR/GCOV/metadata/calibrationInformation/frequencyB/nes0/xCoordinates"
+        <real name="/science/LSAR/GCOV/metadata/calibrationInformation/frequencyB/noiseEquivalentBackscatter/xCoordinates"
               shape="calibrationWidth"
               width="64">
               <annotation app="conformance"
@@ -1621,7 +1621,7 @@
                           standard_name="projection_x_coordinate"
                           units="meters">X coordinates in specified projection</annotation>
         </real>
-        <real name="/science/LSAR/GCOV/metadata/calibrationInformation/frequencyB/nes0/HV"
+        <real name="/science/LSAR/GCOV/metadata/calibrationInformation/frequencyB/noiseEquivalentBackscatter/HV"
               shape="calibrationScaleShape"
               width="32">
           <annotation app="conformance"
@@ -1635,7 +1635,7 @@
                       grid_mapping="projection"
                       units="1">Noise equivalent backscatter in linear scale (units of DN^2)</annotation>
         </real>
-        <real name="/science/LSAR/GCOV/metadata/calibrationInformation/frequencyB/nes0/VH"
+        <real name="/science/LSAR/GCOV/metadata/calibrationInformation/frequencyB/noiseEquivalentBackscatter/VH"
               shape="calibrationScaleShape"
               width="32">
           <annotation app="conformance"
@@ -1649,7 +1649,7 @@
                       grid_mapping="projection"
                       units="1">Noise equivalent backscatter in linear scale (units of DN^2)</annotation>
         </real>
-        <real name="/science/LSAR/GCOV/metadata/calibrationInformation/frequencyB/nes0/VV"
+        <real name="/science/LSAR/GCOV/metadata/calibrationInformation/frequencyB/noiseEquivalentBackscatter/VV"
               shape="calibrationScaleShape"
               width="32">
           <annotation app="conformance"
@@ -1663,7 +1663,7 @@
                       grid_mapping="projection"
                       units="1">Noise equivalent backscatter in linear scale (units of DN^2)</annotation>
         </real>
-        <real name="/science/LSAR/GCOV/metadata/calibrationInformation/frequencyB/nes0/RH"
+        <real name="/science/LSAR/GCOV/metadata/calibrationInformation/frequencyB/noiseEquivalentBackscatter/RH"
               shape="calibrationScaleShape"
               width="32">
           <annotation app="conformance"
@@ -1677,7 +1677,7 @@
                       grid_mapping="projection"
                       units="1">Noise equivalent backscatter in linear scale (units of DN^2)</annotation>
         </real>
-        <real name="/science/LSAR/GCOV/metadata/calibrationInformation/frequencyB/nes0/RV"
+        <real name="/science/LSAR/GCOV/metadata/calibrationInformation/frequencyB/noiseEquivalentBackscatter/RV"
               shape="calibrationScaleShape"
               width="32">
           <annotation app="conformance"
