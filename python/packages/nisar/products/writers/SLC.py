@@ -684,6 +684,7 @@ class SLC(h5py.File):
                             processing_center: str = "JPL",
                             granule_id: str = "None",
                             product_version: str = "0.1.0",
+                            product_doi: str = "(NOT SPECIFIED)",
                             processing_type: str = "CUSTOM",
                             is_dithered: bool = False,
                             is_mixed_mode: bool = False,
@@ -718,6 +719,7 @@ class SLC(h5py.File):
             isMixedMode
             processingCenter
             processingType
+            productDoi
             productSpecificationVersion
             productVersion
             trackNumber
@@ -836,6 +838,10 @@ class SLC(h5py.File):
         d.attrs["description"]= np.bytes_("Product version which represents "
             "the structure of the product and the science content governed by "
             "the algorithm, input data, and processing parameters")
+
+        d = set_string(g, "productDoi", product_doi)
+        d.attrs["description"]= np.bytes_("Digital Object Identifier (DOI) for "
+            "the product")
 
         d = set_string(g, "productLevel", "L1")
         d.attrs["description"] = np.bytes_("Product level. L0A: Unprocessed "

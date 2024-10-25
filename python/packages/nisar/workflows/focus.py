@@ -1358,11 +1358,11 @@ def get_identification_data_from_runconfig(cfg: Struct) -> dict:
     """
     Populate a dict containing the keys
         {"product_version", "processing_type", "composite_release_id",
-        "mission_id", "processing_center", "track", "frame"}
+        "mission_id", "processing_center", "track", "frame", "product_doi"}
     using data from an RSLC runconfig.
     """
     keys = ["product_version", "processing_type", "composite_release_id",
-        "mission_id", "processing_center"]
+        "mission_id", "processing_center", "product_doi"]
     exe = vars(cfg.primary_executable)
     d = {key: exe[key] for key in keys}
     d["track"] = cfg.geometry.relative_orbit_number
