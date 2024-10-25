@@ -720,6 +720,9 @@ class BaseWriterSingleInput():
 
         # if `data` is a numpy fixed-length string, remove trailing null
         # characters
+        # NOTE: It is necessary to check the object's shape to determine
+        # whether it is a single string or a list of strings. If it is a
+        # list of string, then it will be kept as it is.
         if ((isinstance(data, np.bytes_) or isinstance(data, np.ndarray))
                 and (data.dtype.char == 'S') and (data.shape == ())):
             data = np.bytes_(data)
@@ -845,6 +848,9 @@ class BaseWriterSingleInput():
 
             # check if dataset contains a string. If so, read it using method
             # `asstr()``
+            # NOTE: It is necessary to check the object's shape to determine
+            # whether it is a single string or a list of strings. If it is a
+            # list of string, then it will be kept as it is.
             if h5py.check_string_dtype(input_h5_dataset_obj.dtype) and input_h5_dataset_obj.shape == ():
                 # use asstr() to read the dataset
                 data = str(input_h5_dataset_obj.asstr()[...])
