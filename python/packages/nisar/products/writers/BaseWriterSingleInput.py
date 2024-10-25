@@ -567,6 +567,15 @@ class BaseWriterSingleInput():
         Populate common parameters in the identification group
         """
 
+        product_doi = self.cfg['primary_executable']['product_doi']
+
+        if product_doi is None:
+            product_doi = '(NOT SPECIFIED)'
+
+        self.set_value(
+            'identification/productDoi',
+            product_doi)
+
         self.copy_from_input(
             'identification/absoluteOrbitNumber',
             format_function=np.uint32)

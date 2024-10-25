@@ -54,6 +54,7 @@ runconfig:
         primary_executable:
             product_type: enum('GCOV')
             product_version: str('^\d+\.\d+\.\d+$', required=False)
+            product_doi: str(required=False)
             composite_release_id: regex(r'\w\d\d\d\d\d', name='CRID', required=False)
             processing_type: enum('PR', 'UR', required=False)
             product_accuracy: enum('P', 'M', 'N', 'F', required=False)

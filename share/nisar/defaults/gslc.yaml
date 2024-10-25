@@ -57,6 +57,7 @@ runconfig:
         primary_executable:
             product_type: GSLC
             product_version: 0.1.0
+            product_doi:
             composite_release_id:
             processing_type:
             processing_center:

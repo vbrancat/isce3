@@ -823,16 +823,6 @@ class BaseL2WriterSingleInput(BaseWriterSingleInput):
     def populate_ceos_analysis_ready_data_parameters_l2_common(self):
 
         self.copy_from_runconfig(
-            '{PRODUCT}/metadata/ceosAnalysisReadyData/sourceDataAccess',
-            'ceos_analysis_ready_data/source_data_access',
-            default='(NOT SPECIFIED)')
-
-        self.copy_from_runconfig(
-            '{PRODUCT}/metadata/ceosAnalysisReadyData//dataAccess',
-            'ceos_analysis_ready_data/product_data_access',
-            default='(NOT SPECIFIED)')
-
-        self.copy_from_runconfig(
             '{PRODUCT}/metadata/ceosAnalysisReadyData/staticLayersDataAccess',
             'ceos_analysis_ready_data/static_layers_data_access',
             default='(NOT SPECIFIED)')
@@ -1049,6 +1039,11 @@ class BaseL2WriterSingleInput(BaseWriterSingleInput):
         """
         Populate the `sourceData` group
         """
+
+        self.copy_from_input(
+            '{PRODUCT}/metadata/sourceData/productDoi',
+            'identification/productDoi',
+            skip_if_not_present=True)
 
         self.copy_from_input(
             '{PRODUCT}/metadata/sourceData/productVersion',
