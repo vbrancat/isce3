@@ -211,9 +211,9 @@ def construct_nisar_hdf5(outh5, ldr):
     ident_group.create_dataset('listOfFrequencies', data=np.bytes_(["A"]))
     ident_group.create_dataset('missionId', data=np.bytes_("ALOS-2"))
     if ldr.summary.TimeDirectionIndicatorAlongLine[0] == "A":
-        direction = "ascending"
+        direction = "Ascending"
     else:
-        direction = "descending"
+        direction = "Descending"
     ident_group.create_dataset('orbitPassDirection',
                                data=np.bytes_(direction))
     ident_group.create_dataset('processingType',
@@ -377,9 +377,9 @@ def add_imagery(args, ldr, imgfile, pol, orbit, metadata, filenames,
         product_id = leader_fie.split('-')[3]
 
         if product_id[3] == 'L':
-            lookside = 'left'
+            lookside = 'Left'
         else:
-            lookside = 'right'
+            lookside = 'Right'
         metadata['Look Direction'] = lookside.upper()
 
         if verbose:
