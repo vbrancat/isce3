@@ -1,6 +1,8 @@
 import numpy as np
 from nisar.workflows.h5_prep import get_off_params
-from nisar.workflows.helpers import get_cfg_freq_pols
+from nisar.workflows.helpers import (get_cfg_freq_pols,
+                                     get_pixel_offsets_dataset_shape,
+                                     get_pixel_offsets_params)
 
 from .dataset_params import DatasetParams, add_dataset_and_attrs
 from .InSAR_base_writer import InSARBaseWriter
@@ -9,7 +11,6 @@ from .InSAR_L1_writer import L1InSARWriter
 from .InSAR_products_info import InSARProductsInfo
 from .product_paths import ROFFGroupsPaths
 from .units import Units
-from .utils import get_pixel_offsets_dataset_shape, get_pixel_offsets_params
 
 
 class ROFFWriter(L1InSARWriter):

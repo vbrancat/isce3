@@ -141,11 +141,11 @@ class InSARBaseWriter(h5py.File):
 
         # Pull the radargrid of reference and secondary RSLC
         freq = "A" if "A" in self.freq_pols else "B"
-        ref_radargrid = self.ref_rslc.getRadarGrid(freq)
-        sec_radargrid = self.sec_rslc.getRadarGrid(freq)
+        self.ref_radargrid = self.ref_rslc.getRadarGrid(freq)
+        self.sec_radargrid = self.sec_rslc.getRadarGrid(freq)
 
-        self.ref_orbit_epoch = ref_radargrid.ref_epoch
-        self.sec_orbit_epoch = sec_radargrid.ref_epoch
+        self.ref_orbit_epoch = self.ref_radargrid.ref_epoch
+        self.sec_orbit_epoch = self.sec_radargrid.ref_epoch
 
         self.ref_orbit = self.ref_rslc.getOrbit()
         self.sec_orbit = self.sec_rslc.getOrbit()

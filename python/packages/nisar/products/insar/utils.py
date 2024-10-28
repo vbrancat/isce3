@@ -7,8 +7,6 @@ import numpy as np
 from isce3.core import crop_external_orbit
 from nisar.products.readers import SLC
 from nisar.products.readers.orbit import load_orbit_from_xml
-from nisar.workflows import geo2rdr, rdr2geo
-from nisar.workflows.h5_prep import get_off_params
 from osgeo import gdal
 
 
@@ -313,114 +311,6 @@ def get_unwrapped_interferogram_dataset_shape(cfg : dict, freq : str):
                         slc_cols // igram_range_looks)
 
     return igram_shape
-
-def get_pixel_offsets_params(cfg : dict):
-    """
-    Get the pixel offsets parameters from the runconfig dictionary
-
-    Parameters
-    ----------
-    cfg : dict
-        InSAR runconfig dictionray
-
-    Returns
-    ----------
-    is_roff : boolean
-        Offset product or not
-    margin : int
-        Margin
-    rg_start : int
-        Start range
-    az_start : int
-        Start azimuth
-    rg_skip : int
-        Pixels skiped across range
-    az_skip : int
-        Pixels skiped across the azimth
-    rg_search : int
-        Window size across range
-    az_search : int
-        Window size across azimuth
-    rg_chip : int
-        Fine window size across range
-    az_chip : int
-        Fine window size across azimuth
-    ovs_factor : int
-        Oversampling factor
-    """
-    proc_cfg = cfg["processing"]
-
-    # pull the offset parameters
-    is_roff = proc_cfg["offsets_product"]["enabled"]
-    (margin, rg_gross, az_gross,
-        rg_start, az_start,
-        rg_skip, az_skip, ovs_factor) = \
-            [get_off_params(proc_cfg, param, is_roff)
-            for param in ["margin", "gross_offset_range",
-                        "gross_offset_azimuth",
-                        "start_pixel_range","start_pixel_azimuth",
-                        "skip_range", "skip_azimuth",
-                        "correlation_surface_oversampling_factor"]]
-
-    rg_search, az_search, rg_chip, az_chip = \
-        [get_off_params(proc_cfg, param, is_roff,
-                        pattern="layer",
-                        get_min=True,) for param in \
-                            ["half_search_range",
-                                "half_search_azimuth",
-                                "window_range",
-                                "window_azimuth"]]
-    # Adjust margin
-    margin = max(margin, np.abs(rg_gross), np.abs(az_gross))
-
-    # Compute slant range/azimuth vectors of offset grids
-    if rg_start is None:
-        rg_start = margin + rg_search
-    if az_start is None:
-        az_start = margin + az_search
-
-    return (is_roff,  margin, rg_start, az_start,
-            rg_skip, az_skip, rg_search, az_search,
-            rg_chip, az_chip, ovs_factor)
-
-def get_pixel_offsets_dataset_shape(cfg : dict, freq : str):
-    """
-    Get the pixel offsets dataset shape at a given frequency
-
-    Parameters
-    ---------
-    cfg : dict
-        InSAR runconfig dictionary
-    freq: str
-        frequency ('A' or 'B')
-
-    Returns
-    ----------
-    tuple
-        (off_length, off_width):
-    """
-    proc_cfg = cfg["processing"]
-    is_roff,  margin, _, _,\
-    rg_skip, az_skip, rg_search, az_search,\
-    rg_chip, az_chip, _ = get_pixel_offsets_params(cfg)
-
-    ref_h5_slc_file = cfg["input_file_group"]["reference_rslc_file"]
-    ref_rslc = SLC(hdf5file=ref_h5_slc_file)
-
-    radar_grid = ref_rslc.getRadarGrid(freq)
-    slc_lines, slc_cols = (radar_grid.length, radar_grid.width)
-
-    off_length = get_off_params(proc_cfg, "offset_length", is_roff)
-    off_width = get_off_params(proc_cfg, "offset_width", is_roff)
-    if off_length is None:
-        margin_az = 2 * margin + 2 * az_search + az_chip
-        off_length = (slc_lines - margin_az) // az_skip
-    if off_width is None:
-        margin_rg = 2 * margin + 2 * rg_search + rg_chip
-        off_width = (slc_cols - margin_rg) // rg_skip
-
-    # shape of offset product
-    return (off_length, off_width)
 
 def _compute_subswath_mask_id(azi_idx,
                               range_idx,

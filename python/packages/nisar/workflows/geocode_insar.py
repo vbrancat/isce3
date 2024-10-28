@@ -25,7 +25,7 @@ from nisar.workflows.compute_stats import compute_stats_real_data
 
 from nisar.workflows.geocode_corrections import get_az_srg_corrections
 from nisar.workflows.geocode_insar_runconfig import GeocodeInsarRunConfig
-from nisar.workflows.helpers import get_cfg_freq_pols
+from nisar.workflows.helpers import get_cfg_freq_pols, get_offset_radar_grid
 from nisar.workflows.yaml_argparse import YamlArgparse
 from osgeo import gdal
 
@@ -176,105 +176,6 @@ def get_ds_input_output(src_freq_path, dst_freq_path, pol, input_hdf5,
     dataset_path = f"{dst_group_path}/{dataset_name}"
 
     return input_raster, dataset_path
-
-
-def get_offset_radar_grid(cfg, radar_grid_slc):
-    ''' Create radar grid object for offset datasets
-
-    Parameters
-    ----------
-    cfg : dict
-        Dictionary containing processing parameters
-    radar_grid_slc : SLC
-        Object containing SLC properties
-    '''
-    # Define margin used during dense offsets execution
-    if cfg['processing']['dense_offsets']['enabled']:
-        offset_cfg = cfg['processing']['dense_offsets']
-    else:
-        offset_cfg = cfg['processing']['offsets_product']
-    error_channel = journal.error('geocode_insar.get_offset_radar_grid')
-    margin = max(offset_cfg['margin'],
-                 offset_cfg['gross_offset_range'],
-                 offset_cfg['gross_offset_azimuth'])
-    rg_start = offset_cfg['start_pixel_range']
-    az_start = offset_cfg['start_pixel_azimuth']
-    off_length = offset_cfg['offset_length']
-    off_width = offset_cfg['offset_width']
-
-    if cfg['processing']['offsets_product']['enabled']:
-        # In case both offset_product and dense_offsets are enabled,
-        # it is necessary to re-assgin the 'offsets_product' to offset_cfg
-        offset_cfg = cfg['processing']['offsets_product']
-        az_search = np.inf
-        rg_search = np.inf
-        az_window = np.inf
-        rg_window = np.inf
-        layer_names = [key for key in offset_cfg if key.startswith('layer')]
-        if not layer_names:
-            err_str = 'No offset layer found'
-            error_channel.log(err_str)
-            raise KeyError(err_str)
-        # Extract search/chip windows per layer; default to inf if not found
-        for key in layer_names:
-            az_search = min(offset_cfg[key].get('half_search_azimuth', np.inf),
-                            az_search)
-            rg_search = min(offset_cfg[key].get('half_search_range', np.inf),
-                            rg_search)
-            az_window = min(offset_cfg[key].get('window_azimuth', np.inf),
-                            az_window)
-            rg_window = min(offset_cfg[key].get('window_range', np.inf),
-                            rg_window)
-        # Check if any value is Inf and raise exception
-        if np.inf in [az_search, rg_search, az_window, rg_window]:
-            err_str = "Half search or chip window is Inf"
-            error_channel.log(err_str)
-            raise ValueError(err_str)
-    else:
-        # In case both offset_product and dense_offsets are enabled,
-        # it is necessary to re-assgin the 'dense_offsets' to offset_cfg
-        offset_cfg = cfg['processing']['dense_offsets']
-        az_search = offset_cfg['half_search_azimuth']
-        rg_search = offset_cfg['half_search_range']
-        az_window = offset_cfg['window_azimuth']
-        rg_window = offset_cfg['window_range']
-
-    # If not allocated, determine shape of the offsets
-    if off_length is None:
-        length_margin = 2 * margin + 2 * az_search + az_window
-        off_length = (radar_grid_slc.length - length_margin) \
-                     // offset_cfg['skip_azimuth']
-    if off_width is None:
-        width_margin = 2 * margin + 2 * rg_search + rg_window
-        off_width = (radar_grid_slc.width - width_margin) // \
-                    offset_cfg['skip_range']
-    # Determine the starting range and sensing start for the offset radar grid
-    if rg_start is None:
-        rg_start = margin + rg_search
-    if az_start is None:
-        az_start = margin + az_search
-    offset_starting_range = radar_grid_slc.starting_range + \
-                            (rg_start + rg_window//2)\
-                            * radar_grid_slc.range_pixel_spacing
-    offset_sensing_start = radar_grid_slc.sensing_start + \
-                           (az_start + az_window//2)\
-                           / radar_grid_slc.prf
-    # Range spacing for offsets
-    offset_range_spacing = radar_grid_slc.range_pixel_spacing * offset_cfg['skip_range']
-    offset_prf = radar_grid_slc.prf / offset_cfg['skip_azimuth']
-
-    # Create offset radar grid
-    radar_grid = isce3.product.RadarGridParameters(offset_sensing_start,
-                                                   radar_grid_slc.wavelength,
-                                                   offset_prf,
-                                                   offset_starting_range,
-                                                   offset_range_spacing,
-                                                   radar_grid_slc.lookside,
-                                                   off_length,
-                                                   off_width,
-                                                   radar_grid_slc.ref_epoch)
-    return radar_grid
-
 
 def _project_water_to_geogrid(input_water_path, geogrid):
     """

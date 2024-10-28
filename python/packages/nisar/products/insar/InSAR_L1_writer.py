@@ -4,15 +4,16 @@ import numpy as np
 from isce3.core import LUT2d
 from nisar.workflows import geo2rdr, rdr2geo
 from nisar.workflows.h5_prep import add_geolocation_grid_cubes_to_hdf5
-from nisar.workflows.helpers import get_cfg_freq_pols
+from nisar.workflows.helpers import (get_cfg_freq_pols, get_offset_radar_grid,
+                                     get_pixel_offsets_dataset_shape,
+                                     get_pixel_offsets_params)
 
 from .dataset_params import DatasetParams, add_dataset_and_attrs
 from .InSAR_base_writer import InSARBaseWriter
 from .product_paths import L1GroupsPaths
 from .units import Units
 from .utils import (extract_datetime_from_string, generate_insar_subswath_mask,
-                    get_geolocation_grid_cube_obj,
-                    get_pixel_offsets_dataset_shape, get_pixel_offsets_params)
+                    get_geolocation_grid_cube_obj)
 
 
 class L1InSARWriter(InSARBaseWriter):
@@ -355,21 +356,24 @@ class L1InSARWriter(InSARBaseWriter):
                 f"{self.ref_rslc.SwathPath}/frequency{freq}"
             ]
 
+            # Update the offset radar grid
+            rslc_radar_grid = self.ref_rslc.getRadarGrid(freq)
+            off_radargrid = get_offset_radar_grid(self.cfg, rslc_radar_grid)
+
             # shape of offset product
-            off_length, off_width = get_pixel_offsets_dataset_shape(self.cfg, freq)
+            off_length, off_width = off_radargrid.length, off_radargrid.width
 
             # add the slantRange, zeroDopplerTime, and their spacings to pixel offset group
-            ref_rslc_slant_range = rslc_freq_group["slantRange"][()]
-            ref_rslc_zero_doppler_time = rslc_swaths_group["zeroDopplerTime"][()]
-            offset_slant_range = \
-                ref_rslc_slant_range[rg_start::rg_skip][:off_width]
-            offset_zero_doppler_time = \
-                ref_rslc_zero_doppler_time[az_start::az_skip][:off_length]
-
-            offset_zero_doppler_time_spacing = \
-                rslc_swaths_group["zeroDopplerTimeSpacing"][()] * az_skip
-            offset_slant_range_spacing = \
-                rslc_freq_group["slantRangeSpacing"][()] * rg_skip
+            # where the starting range/sensing start of the offsets radar grid
+            # is at the center of the matching window
+            offset_slant_range = np.array(
+                [off_radargrid.starting_range +
+                 i*off_radargrid.range_pixel_spacing
+                 for i in range(off_radargrid.width)])
+            offset_zero_doppler_time = np.array(
+                [off_radargrid.sensing_start +
+                 i/off_radargrid.prf
+                 for i in range(off_radargrid.length)])
 
             zero_dopp_time_units = \
                 rslc_swaths_group["zeroDopplerTime"].attrs['units']
@@ -378,12 +382,6 @@ class L1InSARWriter(InSARBaseWriter):
             if time_str is not None:
                 zero_dopp_time_units = time_str
 
-            az_idx = np.arange(
-                len(ref_rslc_zero_doppler_time)
-                )[az_start::az_skip][:off_length]
-            rg_idx = np.arange(
-                len(ref_rslc_slant_range)
-                )[rg_start::rg_skip][:off_width]
 
             ds_offsets_params = [
                 DatasetParams(
@@ -400,13 +398,13 @@ class L1InSARWriter(InSARBaseWriter):
                 ),
                 DatasetParams(
                     "zeroDopplerTimeSpacing",
-                    offset_zero_doppler_time_spacing,
+                    1.0/off_radargrid.prf,
                     "Along-track spacing of the offset grid",
                     {'units': Units.second},
                 ),
                 DatasetParams(
                     "slantRangeSpacing",
-                    offset_slant_range_spacing,
+                    off_radargrid.range_pixel_spacing,
                     "Slant range spacing of the offset grid",
                     {'units': Units.meter},
                 ),
@@ -468,6 +466,13 @@ class L1InSARWriter(InSARBaseWriter):
                 rdr2geo.run(self.cfg)
                 geo2rdr.run(self.cfg)
 
+            # get the nearest neighbor slant range and azimuth index in the RSLC radar grid
+            # to generate subswath mask
+            rg_idx = np.round([rslc_radar_grid.slant_range_index(rg)
+                               for rg in offset_slant_range])
+            az_idx = np.round([rslc_radar_grid.azimuth_index(az)
+                               for az in offset_zero_doppler_time])
+
             offset_group['mask'][...] = \
                 generate_insar_subswath_mask(self.ref_rslc,
                                              self.sec_rslc,
@@ -504,33 +509,26 @@ class L1InSARWriter(InSARBaseWriter):
             igram_shape = self._get_interferogram_dataset_shape(freq,
                                                                 pol_list[0])
 
-            #  add the slantRange, zeroDopplerTime, and their spacings to inteferogram group
-            igram_slant_range = rslc_freq_group["slantRange"][()]
-            igram_zero_doppler_time = rslc_swaths_group["zeroDopplerTime"][()]
+            # add the slantRange, zeroDopplerTime, and their spacings to inteferogram group
 
-            def max_look_idx(max_val, n_looks):
-                # internal convenience function to get max multilooked index value
-                return (
-                    np.arange((len(max_val) // n_looks) * n_looks)[::n_looks]
-                    + n_looks // 2
-                )
+            rslc_radar_grid = self.ref_rslc.getRadarGrid(freq)
 
-            rg_idx, az_idx = (
-                max_look_idx(max_val, n_looks)
-                for max_val, n_looks in (
-                    (igram_slant_range, self.igram_range_looks),
-                    (igram_zero_doppler_time, self.igram_azimuth_looks),
-                )
-            )
+            # multilook the radar grid of the reference RSLC to
+            # get the radar grid of the interferogram
+            igram_radargrid = rslc_radar_grid.multilook(
+                self.igram_azimuth_looks,
+                self.igram_range_looks)
 
-            igram_slant_range = igram_slant_range[rg_idx]
-            igram_zero_doppler_time = igram_zero_doppler_time[az_idx]
-            igram_zero_doppler_time_spacing = \
-                rslc_swaths_group["zeroDopplerTimeSpacing"][()] * \
-                    self.igram_azimuth_looks
-            igram_slant_range_spacing = \
-                rslc_freq_group["slantRangeSpacing"][()] * \
-                    self.igram_range_looks
+            # compute the slant range and zero doppler time vector
+            # for the interferogram
+            igram_slant_range = np.array(
+                [igram_radargrid.starting_range +
+                 i*igram_radargrid.range_pixel_spacing
+                 for i in range(igram_radargrid.width)])
+            igram_zero_doppler_time = np.array(
+                [igram_radargrid.sensing_start +
+                 i/igram_radargrid.prf
+                 for i in range(igram_radargrid.length)])
 
             zero_dopp_time_units = \
                 rslc_swaths_group["zeroDopplerTime"].attrs['units']
@@ -554,7 +552,7 @@ class L1InSARWriter(InSARBaseWriter):
                 ),
                 DatasetParams(
                     "zeroDopplerTimeSpacing",
-                    igram_zero_doppler_time_spacing,
+                    1.0/igram_radargrid.prf,
                     (
                         "Time interval in the along-track direction for raster"
                         " layers. This is same as the spacing between"
@@ -564,7 +562,7 @@ class L1InSARWriter(InSARBaseWriter):
                 ),
                 DatasetParams(
                     "slantRangeSpacing",
-                    igram_slant_range_spacing,
+                    igram_radargrid.range_pixel_spacing,
                     (
                         "Slant range spacing of grid. Same as difference"
                         " between consecutive samples in slantRange array"
@@ -629,6 +627,13 @@ class L1InSARWriter(InSARBaseWriter):
                 (not os.path.exists(azimuth_offset_path))):
                 rdr2geo.run(self.cfg)
                 geo2rdr.run(self.cfg)
+
+            # get the nearest neighbor slant range and azimuth index in the RSLC radar grid
+            # to generate subswath mask
+            rg_idx = np.round([rslc_radar_grid.slant_range_index(rg)
+                               for rg in igram_slant_range])
+            az_idx = np.round([rslc_radar_grid.azimuth_index(az)
+                               for az in igram_zero_doppler_time])
 
             igram_group['mask'][...] = \
                 generate_insar_subswath_mask(self.ref_rslc,
