@@ -380,7 +380,7 @@ def add_imagery(args, ldr, imgfile, pol, orbit, metadata, filenames,
             lookside = 'Left'
         else:
             lookside = 'Right'
-        metadata['Look Direction'] = lookside.upper()
+        metadata['Look Direction'] = lookside
 
         if verbose:
             print('parameters from metadata:')
