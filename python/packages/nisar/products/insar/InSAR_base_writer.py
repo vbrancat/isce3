@@ -919,7 +919,9 @@ class InSARBaseWriter(h5py.File):
         processing_center = primary_exec_cfg.get("processing_center")
         processing_type = primary_exec_cfg.get("processing_type")
         partial_granule_id = primary_exec_cfg.get("partial_granule_id")
-        product_version = primary_exec_cfg.get("product_version")
+        product_type = self.product_info.ProductType.lower()
+        product_version = primary_exec_cfg["product_version"].get(f'{product_type}_version')
+        product_doi = primary_exec_cfg["product_doi"].get(f'{product_type}_version')
         crid = primary_exec_cfg.get("composite_release_id")
 
         # Determine processingType
@@ -1117,6 +1119,9 @@ class InSARBaseWriter(h5py.File):
             DatasetParams(
                 "radarBand", radar_band_name,
                 'Acquired frequency band, either "L" or "S"'
+            ),
+             DatasetParams(
+                "productDoi", product_doi, "Digital Object Identifier (DOI) for the product"
             ),
             DatasetParams(
                 "productLevel",

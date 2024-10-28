@@ -40,6 +40,7 @@ class ROFFWriter(L1InSARWriter):
         """
         super().add_root_attrs()
 
+        # Add additional attributes
         self.attrs["title"] = np.bytes_("NISAR L1 ROFF Product")
         self.attrs["reference_document"] = \
             np.bytes_("D-105009 NISAR NASA SDS"
