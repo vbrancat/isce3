@@ -141,11 +141,11 @@ class InSARBaseWriter(h5py.File):
 
         # Pull the radargrid of reference and secondary RSLC
         freq = "A" if "A" in self.freq_pols else "B"
-        ref_radargrid = self.ref_rslc.getRadarGrid(freq)
-        sec_radargrid = self.sec_rslc.getRadarGrid(freq)
+        self.ref_radargrid = self.ref_rslc.getRadarGrid(freq)
+        self.sec_radargrid = self.sec_rslc.getRadarGrid(freq)
 
-        self.ref_orbit_epoch = ref_radargrid.ref_epoch
-        self.sec_orbit_epoch = sec_radargrid.ref_epoch
+        self.ref_orbit_epoch = self.ref_radargrid.ref_epoch
+        self.sec_orbit_epoch = self.sec_radargrid.ref_epoch
 
         self.ref_orbit = self.ref_rslc.getOrbit()
         self.sec_orbit = self.sec_rslc.getOrbit()
@@ -873,7 +873,7 @@ class InSARBaseWriter(h5py.File):
             # Orbit time
             orbit_time = dst_orbit_group["time"]
             orbit_time.attrs['description'] = np.bytes_(
-                "Time vector record. This record contains the time corresponding to position and velocity records")
+                "Time vector record. This record contains the time since UTC epoch corresponding to position and velocity records")
             orbit_time_units = orbit_time.attrs['units']
             orbit_time_units = extract_datetime_from_string(str(orbit_time_units), 'seconds since ')
             if orbit_time_units is not None:
@@ -919,7 +919,9 @@ class InSARBaseWriter(h5py.File):
         processing_center = primary_exec_cfg.get("processing_center")
         processing_type = primary_exec_cfg.get("processing_type")
         partial_granule_id = primary_exec_cfg.get("partial_granule_id")
-        product_version = primary_exec_cfg.get("product_version")
+        product_type = self.product_info.ProductType.lower()
+        product_version = primary_exec_cfg["product_version"].get(f'{product_type}_version')
+        product_doi = primary_exec_cfg["product_doi"].get(f'{product_type}_version')
         crid = primary_exec_cfg.get("composite_release_id")
 
         # Determine processingType
@@ -1048,7 +1050,7 @@ class InSARBaseWriter(h5py.File):
             # rename the End time to stop
             time_in_description = 'stop' if start_or_stop == 'End' else 'start'
             ds.attrs['description'] = \
-                f"Azimuth {time_in_description} time of {rslc_name} RSLC product"
+                f"Azimuth {time_in_description} time (in UTC) of {rslc_name} RSLC product in the format YYYY-mm-ddTHH:MM:SS.sssssssss"
 
         # Update the description for the absolute orbit numbers
         for rslc_name in ['reference', 'secondary']:
@@ -1106,7 +1108,7 @@ class InSARBaseWriter(h5py.File):
                 "processingDateTime",
                 datetime.now(timezone.utc).isoformat()[:19],
                 (
-                    "Processing UTC date and time in the format YYYY-mm-ddTHH:MM:SS"
+                    "Processing date and time (in UTC) in the format YYYY-mm-ddTHH:MM:SS"
                 ),
             ),
             DatasetParams(
@@ -1117,6 +1119,9 @@ class InSARBaseWriter(h5py.File):
             DatasetParams(
                 "radarBand", radar_band_name,
                 'Acquired frequency band, either "L" or "S"'
+            ),
+             DatasetParams(
+                "productDoi", product_doi, "Digital Object Identifier (DOI) for the product"
             ),
             DatasetParams(
                 "productLevel",

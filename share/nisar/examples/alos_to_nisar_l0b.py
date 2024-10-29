@@ -269,9 +269,9 @@ def populateIdentification(ident: h5py.Group, ldr: LeaderFile.LeaderFile):
     ident.create_dataset('diagnosticModeFlag', data=numpy.uint8(0))
     ident.create_dataset('isGeocoded', data=numpy.string_("False"))
     ident.create_dataset('listOfFrequencies', data=numpy.string_(["A"]))
-    ident.create_dataset('lookDirection', data = numpy.string_("right"))
+    ident.create_dataset('lookDirection', data = numpy.string_("Right"))
     ident.create_dataset('missionId', data=numpy.string_("ALOS"))
-    direction = "ascending" if ldr.summary.TimeDirectionIndicatorAlongLine[0] == "A" else "descending"
+    direction = "Ascending" if ldr.summary.TimeDirectionIndicatorAlongLine[0] == "A" else "Descending"
     ident.create_dataset('orbitPassDirection', data=numpy.string_(direction))
     ident.create_dataset('processingType', data=numpy.string_("repackaging"))
     ident.create_dataset('productType', data=numpy.string_("RRSD"))

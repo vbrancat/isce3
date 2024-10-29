@@ -1216,7 +1216,7 @@ def set_create_geolocation_grid_coordinates(hdf5_obj, root_ds, radar_grid,
     coordinates_list.append(rg_dataset)
 
     # Zero-doppler time
-    descr = "Zero Doppler time values corresponding to the geolocation grid"
+    descr = "Zero Doppler time since UTC epoch values corresponding to the geolocation grid"
     az_dataset_name = os.path.join(root_ds, 'zeroDopplerTime')
     if az_dataset_name in hdf5_obj:
         del hdf5_obj[az_dataset_name]
