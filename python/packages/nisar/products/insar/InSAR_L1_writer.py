@@ -119,7 +119,6 @@ class L1InSARWriter(InSARBaseWriter):
         geolocation_grid_group['epsg'].attrs['description'] = \
             np.bytes_("EPSG code corresponding to the coordinate system"
                        " used for representing the geolocation grid")
-        geolocation_grid_group['epsg'].attrs['units'] = Units.unitless
         geolocation_grid_group['losUnitVectorX'].attrs['units'] = Units.unitless
         geolocation_grid_group['losUnitVectorY'].attrs['units'] = Units.unitless
 
@@ -393,7 +392,7 @@ class L1InSARWriter(InSARBaseWriter):
                 DatasetParams(
                     "zeroDopplerTime",
                     offset_zero_doppler_time,
-                    "Zero Doppler azimuth time vector",
+                    "Zero Doppler azimuth time since UTC epoch vector",
                     {'units': zero_dopp_time_units},
                 ),
                 DatasetParams(
@@ -449,6 +448,7 @@ class L1InSARWriter(InSARBaseWriter):
                                                  " A value of '0' in either digit indicates an invalid sample"
                                                  " in the corresponding RSLC"),
                                     fill_value=255)
+            offset_group['mask'].attrs['long_name'] = np.bytes_("Valid samples subswath mask")
             offset_group['mask'].attrs['valid_min'] = 0
             offset_group['mask'].attrs['valid_max'] = 55
 
@@ -547,7 +547,7 @@ class L1InSARWriter(InSARBaseWriter):
                 DatasetParams(
                     "zeroDopplerTime",
                     igram_zero_doppler_time,
-                    "Zero Doppler azimuth time vector",
+                    "Zero Doppler azimuth time since UTC epoch vector",
                     {'units': zero_dopp_time_units},
                 ),
                 DatasetParams(
@@ -613,6 +613,7 @@ class L1InSARWriter(InSARBaseWriter):
                                     fill_value=255)
             igram_group['mask'].attrs['valid_min'] = 0
             igram_group['mask'].attrs['valid_max'] = 55
+            igram_group['mask'].attrs['long_name'] = np.bytes_("Valid samples subswath mask")
 
             range_offset_path = \
                 os.path.join(self.topo_path,

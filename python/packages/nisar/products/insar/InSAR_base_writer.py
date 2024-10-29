@@ -873,7 +873,7 @@ class InSARBaseWriter(h5py.File):
             # Orbit time
             orbit_time = dst_orbit_group["time"]
             orbit_time.attrs['description'] = np.bytes_(
-                "Time vector record. This record contains the time corresponding to position and velocity records")
+                "Time vector record. This record contains the time since UTC epoch corresponding to position and velocity records")
             orbit_time_units = orbit_time.attrs['units']
             orbit_time_units = extract_datetime_from_string(str(orbit_time_units), 'seconds since ')
             if orbit_time_units is not None:
@@ -1050,7 +1050,7 @@ class InSARBaseWriter(h5py.File):
             # rename the End time to stop
             time_in_description = 'stop' if start_or_stop == 'End' else 'start'
             ds.attrs['description'] = \
-                f"Azimuth {time_in_description} time of {rslc_name} RSLC product"
+                f"Azimuth {time_in_description} time (in UTC) of {rslc_name} RSLC product in the format YYYY-mm-ddTHH:MM:SS.sssssssss"
 
         # Update the description for the absolute orbit numbers
         for rslc_name in ['reference', 'secondary']:
@@ -1108,7 +1108,7 @@ class InSARBaseWriter(h5py.File):
                 "processingDateTime",
                 datetime.now(timezone.utc).isoformat()[:19],
                 (
-                    "Processing UTC date and time in the format YYYY-mm-ddTHH:MM:SS"
+                    "Processing date and time (in UTC) in the format YYYY-mm-ddTHH:MM:SS"
                 ),
             ),
             DatasetParams(
