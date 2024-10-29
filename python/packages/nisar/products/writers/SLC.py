@@ -680,6 +680,7 @@ class SLC(h5py.File):
                             planned_datatake_id: Optional[str] = None,
                             planned_observation_id: Optional[str] = None,
                             is_urgent: Optional[bool] = None,
+                            is_joint: Optional[bool] = None,
                             product_spec_version: str = "1.2.0",
                             processing_center: str = "JPL",
                             granule_id: str = "None",
@@ -703,6 +704,7 @@ class SLC(h5py.File):
             absoluteOrbitNumber
             boundingPolygon
             instrumentName
+            isJointObservation
             isUrgentObservation
             listOfFrequencies
             missionId
@@ -816,6 +818,13 @@ class SLC(h5py.File):
         if planned_observation_id is not None:
             set_string_list(g, "plannedObservationId", planned_observation_id,
                 "List of planned observations included in the product")
+
+        if is_joint is not None:
+            d = set_string(g, "isJointObservation", str(is_joint))
+            d.attrs["description"] = np.bytes_(
+                '"True" if any portion of this product was acquired in a joint '
+                'observation mode (e.g., L-band and S-band simultaneously), '
+                '"False" otherwise')
 
         if is_urgent is not None:
             d = set_string(g, "isUrgentObservation", str(is_urgent))

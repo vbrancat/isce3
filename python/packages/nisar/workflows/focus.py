@@ -1377,16 +1377,16 @@ def get_identification_data_from_raw(rawlist: list[Raw]) -> dict:
     by combining the relevant identification metadata keys from all raw data
     files in the provided list.
     """
-    def parse_urgent(raw: Raw) -> bool:
-        return raw.identification.isUrgentObservation.lower() == "true"
-
     return dict(
         # L0B always have a single entry
         planned_datatake_id = [raw.identification.plannedDatatake[0]
             for raw in rawlist],
         planned_observation_id = [raw.identification.plannedObservation[0]
             for raw in rawlist],
-        is_urgent = any(parse_urgent(raw) for raw in rawlist)
+        is_urgent = any(raw.identification.isUrgentObservation
+            for raw in rawlist),
+        is_joint = any(raw.identification.isJointObservation
+            for raw in rawlist)
     )
 
 
