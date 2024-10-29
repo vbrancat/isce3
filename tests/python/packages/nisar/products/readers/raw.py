@@ -41,7 +41,7 @@ def test_raw():
 
     # Verify assumptions.
     npt.assert_equal(orbit.reference_epoch, attitude.reference_epoch)
-    npt.assert_equal(side, "right")
+    npt.assert_equal(side, "Right")
     npt.assert_equal(raw.isDithered(freq, tx), False)
     npt.assert_equal(raw.sarBand, 'L')
     npt.assert_equal(ds.ndim, 2)

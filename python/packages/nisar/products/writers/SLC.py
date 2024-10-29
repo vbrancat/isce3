@@ -83,8 +83,9 @@ def add_cal_layer(group: h5py.Group, lut: LUT2d, name: str,
         # C++ API doesn't add descriptions...
         group[xname].attrs["description"] = np.bytes_("Slant range "
             "dimension corresponding to processing information records")
-        group[yname].attrs["description"] = np.bytes_("Zero doppler time "
-            "dimension corresponding to processing information records")
+        group[yname].attrs["description"] = np.bytes_("Zero Doppler time "
+            "since UTC epoch dimension corresponding to processing information "
+            "records")
         group[name].attrs["description"] = np.bytes_(description)
     else:
         raise IOError(f"Found only one of {xname} or {yname}."
@@ -245,8 +246,8 @@ def require_lut_axes(group, epoch, t, r, kind):
         t = group[name][:]
     else:
         write_dataset(group, name, np.float64, t,
-            "Zero doppler time dimension corresponding to " + kind,
-            time_units(epoch))
+            "Zero Doppler time since UTC epoch dimension "
+            "corresponding to " + kind, time_units(epoch))
 
     name = "slantRange"
     if name in group:
@@ -290,6 +291,11 @@ def fill_partial_granule_id(partial_granule_id: str, output_mode: PolChannelSet,
         The input string with all its substring keywords replaced with their
         values as specified in the NISAR file naming conventions,
         JPL D-102255B section 3.7.
+    is_full_frame : bool
+        True if image polygon fully covers the frame polygon per the coverage
+        threshold, False otherwise (including if could not be determined).
+    overlap : float
+        Fraction of frame that is covered by image; NaN if cannot be determined.
 
     Notes
     -----
@@ -325,6 +331,7 @@ def fill_partial_granule_id(partial_granule_id: str, output_mode: PolChannelSet,
     except:
         log.warning("Could not determine coverage indicator given "
             f"{frame_polygon=} and {image_polygon=}")
+        overlap = np.nan
         coverage = "X"
 
     replacements = {
@@ -337,7 +344,7 @@ def fill_partial_granule_id(partial_granule_id: str, output_mode: PolChannelSet,
     granule_id = partial_granule_id
     for key, value in replacements.items():
         granule_id = granule_id.replace(key, value)
-    return granule_id
+    return granule_id, coverage == "F", overlap
 
 
 class SLC(h5py.File):
@@ -560,7 +567,7 @@ class SLC(h5py.File):
         d = g.parent.require_dataset("zeroDopplerTime", t.shape, t.dtype, data=t)
         d.attrs["units"] = np.bytes_(time_units(epoch))
         d.attrs["description"] = np.bytes_(
-            "CF compliant dimension associated with azimuth time")
+            "Zero Doppler time since UTC epoch dimension")
 
         d = g.parent.require_dataset("zeroDopplerTimeSpacing", (), float)
         d[()] = t.spacing
@@ -571,8 +578,7 @@ class SLC(h5py.File):
 
         d = g.require_dataset("slantRange", r.shape, r.dtype, data=r)
         d.attrs["units"] = np.bytes_("meters")
-        d.attrs["description"] = np.bytes_("CF compliant dimension associated"
-                                            " with slant range")
+        d.attrs["description"] = np.bytes_("Slant range dimension")
 
         d = g.require_dataset("slantRangeSpacing", (), float)
         d[()] = r.spacing
@@ -625,9 +631,9 @@ class SLC(h5py.File):
         g = self.root.require_group("metadata/orbit")
         orbit.save_to_h5(g)
         # Add description attributes.  Should these go in saveToH5 method?
-        g["time"].attrs["description"] = np.bytes_("Time vector record. This"
-            " record contains the time corresponding to position and velocity"
-            " records")
+        g["time"].attrs["description"] = np.bytes_("Time vector record. This "
+            "record contains the time since UTC epoch corresponding to "
+            "position and velocity records")
         g["position"].attrs["description"] = np.bytes_("Position vector"
             " record. This record contains the platform position data with"
             " respect to WGS84 G1762 reference frame")
@@ -689,6 +695,9 @@ class SLC(h5py.File):
                             processing_type: str = "CUSTOM",
                             is_dithered: bool = False,
                             is_mixed_mode: bool = False,
+                            is_full_frame: bool = False,
+                            frame_coverage: float = np.nan,
+                            coverage_threshold: float = 0.75,
                             composite_release_id: str = "A10000"):
         """
         Populate identification metadata with a combination of copied values
@@ -718,6 +727,7 @@ class SLC(h5py.File):
             frameNumber
             granuleId
             isDithered
+            isFullFrame
             isMixedMode
             processingCenter
             processingType
@@ -749,11 +759,9 @@ class SLC(h5py.File):
         d = set_string(g, "productType", self.product)
         d.attrs["description"] = np.bytes_("Product type")
         # L0B doesn't know about track/frame, so have to add it.
-        d = g.require_dataset("trackNumber", (), 'uint8', data=track)
-        d.attrs["units"] = np.bytes_("1")
+        d = g.require_dataset("trackNumber", (), 'uint32', data=track)
         d.attrs["description"] = np.bytes_("Track number")
         d = g.require_dataset("frameNumber", (), 'uint16', data=frame)
-        d.attrs["units"] = np.bytes_("1")
         d.attrs["description"] = np.bytes_("Frame number")
         # Polygon different due to reskew and possibly multiple input L0Bs.
         if polygon is not None:
@@ -767,14 +775,16 @@ class SLC(h5py.File):
         # different anyway due to reskew.
         if start_time is not None:
             d = set_string(g, "zeroDopplerStartTime", start_time.isoformat())
-            d.attrs["description"] = np.bytes_(
-                "Azimuth start time of the product")
+            d.attrs["description"] = np.bytes_("Azimuth start time (in UTC) of "
+                "the product in the format YYYY-mm-ddTHH:MM:SS.sssssssss")
+                
         else:
             log.warning("SLC start time not updated.  Using L0B start time.")
         if end_time is not None:
             d = set_string(g, "zeroDopplerEndTime", end_time.isoformat())
-            d.attrs["description"] = np.bytes_(
-                "Azimuth stop time of the product")
+            d.attrs["description"] = np.bytes_("Azimuth stop time (in UTC) of "
+                "the product in the format YYYY-mm-ddTHH:MM:SS.sssssssss")
+                
         else:
             log.warning("SLC end time not updated.  Using L0B end time.")
 
@@ -870,6 +880,12 @@ class SLC(h5py.File):
         d.attrs["description"] = np.bytes_('"True" if the pulse timing was '
             'varied (dithered) during acquisition, "False" otherwise.')
 
+        d = set_string(g, "isFullFrame", str(is_full_frame))
+        d.attrs["description"] = np.bytes_('"True" if the product fully covers '
+            'a NISAR frame, "False" if partial coverage')
+        d.attrs["frameCoveragePercentage"] = 100 * frame_coverage
+        d.attrs["thresholdPercentage"] = 100 * coverage_threshold
+
         d = set_string(g, "isMixedMode", str(is_mixed_mode))
         d.attrs["description"] = np.bytes_('"True" if this product is a '
             'composite of data collected in multiple radar modes, '
@@ -882,8 +898,8 @@ class SLC(h5py.File):
         # only report to integer seconds
         now = datetime.now(timezone.utc).isoformat()[:19]
         d = set_string(g, "processingDateTime", now)
-        d.attrs["description"] = np.bytes_("Processing UTC date and time in "
-            "the format YYYY-mm-ddTHH:MM:SS")
+        d.attrs["description"] = np.bytes_("Processing date and time (in UTC) "
+            "in the format YYYY-mm-ddTHH:MM:SS")
 
 
     def set_geolocation_grid(self, orbit: Orbit, grid: RadarGridParameters,
@@ -956,17 +972,17 @@ class SLC(h5py.File):
         if "beta0" not in geo_group:
             write_dataset(geo_group, "beta0", np.float32, dummy_array,
                 "2D LUT to convert DN to beta 0 assuming as a function"
-                " of zero doppler time and slant range", "1")
+                " of zero Doppler time and slant range", "1")
 
         if "sigma0" not in geo_group:
             write_dataset(geo_group, "sigma0", np.float32, dummy_array,
                 "2D LUT to convert DN to sigma 0 assuming as a function"
-                " of zero doppler time and slant range", "1")
+                " of zero Doppler time and slant range", "1")
 
         if "gamma0" not in geo_group:
             write_dataset(geo_group, "gamma0", np.float32, dummy_array,
                 "2D LUT to convert DN to gamma 0 as a function of zero"
-                " doppler time and slant range", "1")
+                " Doppler time and slant range", "1")
 
         # TODO Populate EAP with real values.  Reporting unit gain for now.
         eap_group = cal_group.require_group(

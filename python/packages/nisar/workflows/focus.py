@@ -1666,7 +1666,7 @@ def focus(runconfig, runconfig_path=""):
     og = next(iter(ogrid.values()))
     start_time = og.sensing_datetime(0)
     end_time = og.sensing_datetime(og.length - 1)
-    granule_id = fill_partial_granule_id(
+    granule_id, is_full_frame, overlap = fill_partial_granule_id(
         cfg.primary_executable.partial_granule_id, common_mode, start_time,
         end_time, shapely.from_geojson(cfg.geometry.track_frame_polygon),
         shapely.from_wkt(polygon),
@@ -1676,6 +1676,8 @@ def focus(runconfig, runconfig_path=""):
     slc.copy_identification(rawlist[0], polygon=polygon,
         start_time=start_time, end_time=end_time,
         frequencies=common_mode.frequencies,
+        is_full_frame=is_full_frame, frame_coverage=overlap,
+        coverage_threshold=cfg.geometry.full_coverage_threshold_percent / 100,
         is_dithered=is_dithered, granule_id=granule_id,
         is_mixed_mode=any(PolChannelSet.from_raw(raw) != common_mode
             for raw in rawlist),
