@@ -364,7 +364,31 @@ void Geocode<T>::geocodeInterp(
             radar_grid.width(), radar_grid.length(), 1);
     }
 
-    // create data interpolator
+    // Extra margin for interpolation
+    int interp_margin = 5;
+
+    // Create data interpolator
+    switch (_data_interp_method) {
+        case BILINEAR_METHOD:
+            std::cout << "interpolator: BilinearInterpolator" << std::endl;
+            break;
+        case BICUBIC_METHOD:
+            std::cout << "interpolator: BicubicInterpolator" << std::endl;
+            break;
+        case BIQUINTIC_METHOD:
+            std::cout << "interpolator: Spline2dInterpolator" << std::endl;
+            break;
+        case NEAREST_METHOD:
+            std::cout << "interpolator: NearestNeighborInterpolator" << std::endl;
+            interp_margin = 0;
+            break;
+        case SINC_METHOD:
+            std::cout << "interpolator: Sinc2dInterpolator" << std::endl;
+            break;
+        default:
+            std::string error_msg = "Invalid data interpolation method";
+            throw isce3::except::InvalidArgument(ISCE_SRCINFO(), error_msg);
+    }
     std::unique_ptr<isce3::core::Interpolator<T_out>> interp {
             isce3::core::createInterpolator<T_out>(_data_interp_method)};
 
@@ -669,9 +693,6 @@ void Geocode<T>::geocodeInterp(
                     geogrid.width(), geoBlockLength, 1);
         }
 
-        // Add extra margin for interpolation. We set it to 5 pixels marging
-        // considering SINC interpolation that requires 9 pixels
-        int interp_margin = 5;
         azimuthFirstLine = std::max(azimuthFirstLine - interp_margin, 0);
         rangeFirstPixel = std::max(rangeFirstPixel - interp_margin, 0);
 
@@ -800,7 +821,7 @@ void Geocode<T>::geocodeInterp(
                     input_layover_shadow_mask_raster,
                     input_layover_shadow_mask, sub_swaths,
                     effective_apply_valid_samples_sub_swath_masking,
-                    out_mask, out_mask_array);
+                    out_mask, out_mask_array, interp_margin);
 
             // flush optional layers
             if (out_geo_rtc_band != nullptr && band == 0) {
@@ -891,15 +912,14 @@ inline void Geocode<T>::_interpolate(
         isce3::product::SubSwaths * sub_swaths,
         bool apply_valid_samples_sub_swath_masking,
         isce3::io::Raster* out_mask,
-        isce3::core::Matrix<uint8_t>& out_mask_array)
+        isce3::core::Matrix<uint8_t>& out_mask_array,
+        const int interp_margin)
 {
 
     using isce3::math::complex_operations::operator*;
 
     size_t length = geoDataBlock.length();
     size_t width = geoDataBlock.width();
-    // Add extra margin for interpolation
-    int interp_margin = 5;
 
     double offsetY =
             azimuthFirstLine / radar_grid.prf() + radar_grid.sensingStart();

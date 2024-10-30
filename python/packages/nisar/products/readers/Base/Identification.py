@@ -33,6 +33,23 @@ def get_scalar_or_first(group, key, typeconv = lambda x: x):
     return typeconv(value)
 
 
+def parse_bool(s: np.bytes_) -> bool:
+    """
+    Parse a NISAR string representing a boolean value.
+
+    Parameters
+    ----------
+    s : np.bytes_
+        Byte string
+
+    Returns
+    -------
+    bool
+        True if s equals b'True' (any capitalization), False otherwise
+    """
+    return s.decode("utf-8").lower() == "true"
+
+
 def get_list_from_scalar_or_list(group, key, typeconv = lambda x: x):
     """
     Get a list from an HDF5 dataset that may be either a scalar or list
@@ -81,6 +98,7 @@ class Identification(object):
         self.diagnosticModeName = None
 
         ###Information from mission planning
+        self.isJointObservation = None
         self.isUrgentObservation = None
         self.plannedDatatake = None
         self.plannedObservation = None
@@ -207,9 +225,17 @@ class Identification(object):
         is_urgent = get_scalar_or_first(h5grp, "isUrgentObservation")
         if isinstance(is_urgent, np.bool_):
             warn("isUrgentObservation is boolean but expected string")
-            self.isUrgentObservation = str(is_urgent)
+            self.isUrgentObservation = bool(is_urgent)
         else:
-            self.isUrgentObservation = bytestring(is_urgent)
+            self.isUrgentObservation = parse_bool(is_urgent)
+
+        # isJointObservation was added in spec v1.2.0.  That's after the bool
+        # type confusion was resolved, so just assume string.
+        try:
+            self.isJointObservation = parse_bool(h5grp["isJointObservation"][()])
+        except KeyError:
+            warn("Could not find isJointObservation in product identification.")
+            # leave as None
 
         ###Processing type info to be added
 

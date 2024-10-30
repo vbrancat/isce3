@@ -226,6 +226,7 @@ def construct_nisar_hdf5(outh5, ldr):
     ident_group.create_dataset('frameNumber', data=np.array(0,
                                                             dtype=np.uint16))
     ident_group.create_dataset("isUrgentObservation", data=np.bytes_("False"))
+    ident_group.create_dataset("isJointObservation", data=np.bytes_("False"))
 
     ident_group.create_dataset("plannedObservationId", data=np.bytes_(["0"]))
     # shape = numberOfDatatakes

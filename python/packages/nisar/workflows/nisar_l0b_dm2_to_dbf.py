@@ -244,8 +244,8 @@ def nisar_l0b_dm2_to_dbf(args):
     txrx_pol = frq_pol[freq_band][0]
 
     # check the RX calibration status
-    amp_cal = args.amp_cal
     if args.calib:
+        amp_cal = args.amp_cal
         if amp_cal is not None:
             use_caltone = False
             # check number of RX channels match "amp_cal"
@@ -263,6 +263,8 @@ def nisar_l0b_dm2_to_dbf(args):
             use_caltone = True
             logger.info('Apply RX calibration based on inverse of slow-time'
                         ' averaged complex caltones!')
+    else:  # No calibration, set cal amplitude to None!
+        amp_cal = None
     # get ref epoch and build AZ slice generator
     epoch, azt_raw = raw.getPulseTimes(freq_band, txrx_pol[0])
     n_rgl_tot = azt_raw.size

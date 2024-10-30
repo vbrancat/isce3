@@ -3,8 +3,18 @@ runconfig:
     groups:
         input_file_group:
             # REQUIRED List of NISAR raw data products in L0B format.
+            #
+            # Example for single-mode processing:
+            # input_file_path:
+            # - PATH_TO_L0B_FILE.h5
+            #
+            # Example for mixed-mode processing:
+            # input_file_path:
+            # - PATH_TO_L0B_FILE_1.h5
+            # - PATH_TO_L0B_FILE_2.h5
+            # - PATH_TO_L0B_FILE_3.h5
             input_file_path:
-            - /tmp/ALPSRP037370690.L0B.h5
+            -
 
             # Filename of the input file for QA.
             # REQUIRED for QA. NOT REQUIRED if only running Product SAS.
@@ -68,7 +78,7 @@ runconfig:
             product_version: 0.1.0
             product_doi: (NOT SPECIFIED)
             composite_release_id: A10000
-            processing_type: CUSTOM
+            processing_type: Custom
             mission_id: null  # null to get from first L0B input
             processing_center: JPL
             partial_granule_id: (NOT SPECIFIED)
@@ -336,6 +346,8 @@ runconfig:
                 block_size:
                     range: 0
                     azimuth: 1024
+
+                notches: []
 
             # Settings for azimuth compression algorithm.
             azcomp:
