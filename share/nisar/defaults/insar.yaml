@@ -1840,7 +1840,6 @@ runconfig:
                         # If the variance layers' units are 'meters^2': [0.0, 10.0]
                         # Else-if the variance layers' units are 'pixels^2': [0.0, 0.1]
                         # Otherwise: [0.0, max(sqrt(<az var layer>), sqrt(<rg var layer>))]
-                        # Defaults to None.
                         # Default: None
                         colorbar_min_max:
 
@@ -2109,7 +2108,6 @@ runconfig:
                         # If the variance layers' units are 'meters^2': [0.0, 10.0]
                         # Else-if the variance layers' units are 'pixels^2': [0.0, 0.1]
                         # Otherwise: [0.0, max(sqrt(<az var layer>), sqrt(<rg var layer>))]
-                        # Defaults to None.
                         # Default: None
                         colorbar_min_max:
 
