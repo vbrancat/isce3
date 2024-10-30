@@ -823,6 +823,7 @@ rifg_qa_reports_options:
     wrapped_igram: include('qa_threshold_options', required=False)
     coh_mag: include('qa_threshold_options', required=False)
     az_and_range_offsets: include('qa_threshold_options', required=False)
+    correlation_surface_peak: include('qa_threshold_options', required=False)
     browse_png: include('qa_browse_png_wrapped_options', required=False)
 
 runw_options:
@@ -837,6 +838,7 @@ runw_qa_reports_options:
     ionosphere_phase_screen: include('qa_threshold_options', required=False)
     ionosphere_phase_screen_uncertainty: include('qa_threshold_options', required=False)
     az_and_range_offsets: include('qa_threshold_options', required=False)
+    correlation_surface_peak: include('qa_threshold_options', required=False)
     browse_png: include('qa_browse_png_unwrapped_options', required=False)
 
 gunw_options:
@@ -852,6 +854,7 @@ gunw_qa_reports_options:
     ionosphere_phase_screen: include('qa_threshold_options', required=False)
     ionosphere_phase_screen_uncertainty: include('qa_threshold_options', required=False)
     az_and_range_offsets: include('qa_threshold_options', required=False)
+    correlation_surface_peak: include('qa_threshold_options', required=False)
     browse_png: include('qa_browse_png_unwrapped_options', required=False)
 
 roff_options:
