@@ -347,6 +347,8 @@ runconfig:
                     range: 0
                     azimuth: 1024
 
+                notches: []
+
             # Settings for azimuth compression algorithm.
             azcomp:
                 # Azimuth compression can be tiled arbitrarily, though
