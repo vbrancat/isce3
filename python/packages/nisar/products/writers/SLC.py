@@ -950,7 +950,9 @@ class SLC(h5py.File):
     def add_calibration_section(self, frequency, pol,
                                 az_time_orig_vect: np.array,
                                 epoch: DateTime,
-                                slant_range_orig_vect: np.array):
+                                slant_range_orig_vect: np.array,
+                                beta0_lut: LUT2d, sigma0_lut: LUT2d,
+                                gamma0_lut: LUT2d):
         assert len(pol) == 2 and pol[0] in "HVLR" and pol[1] in "HV"
 
         # TODO agree on LUT postings.
@@ -965,22 +967,28 @@ class SLC(h5py.File):
         geo_group = cal_group.require_group("geometry")
 
         # NOTE Spec changed so that now each subgroup has its own LUT2d axes.
-        t, r = require_lut_axes(geo_group, epoch, t, r, "calibration records")
+        if not (beta0_lut.x_axis == sigma0_lut.x_axis == gamma0_lut.x_axis):
+            raise ValueError("shape mismatch among calibration LUT x-axes")
+        if not (beta0_lut.y_axis == sigma0_lut.y_axis == gamma0_lut.y_axis):
+            raise ValueError("shape mismatch among calibration LUT y-axes")
 
-        dummy_array = np.ones((t.size, r.size), dtype=np.float32)
+        lut_time = np.array(beta0_lut.y_axis)
+        lut_range = np.array(beta0_lut.x_axis)
+        require_lut_axes(geo_group, epoch, lut_time, lut_range,
+            "calibration records")
 
         if "beta0" not in geo_group:
-            write_dataset(geo_group, "beta0", np.float32, dummy_array,
+            write_dataset(geo_group, "beta0", np.float32, beta0_lut.data,
                 "2D LUT to convert DN to beta 0 assuming as a function"
                 " of zero Doppler time and slant range", "1")
 
         if "sigma0" not in geo_group:
-            write_dataset(geo_group, "sigma0", np.float32, dummy_array,
+            write_dataset(geo_group, "sigma0", np.float32, sigma0_lut.data,
                 "2D LUT to convert DN to sigma 0 assuming as a function"
                 " of zero Doppler time and slant range", "1")
 
         if "gamma0" not in geo_group:
-            write_dataset(geo_group, "gamma0", np.float32, dummy_array,
+            write_dataset(geo_group, "gamma0", np.float32, gamma0_lut.data,
                 "2D LUT to convert DN to gamma 0 as a function of zero"
                 " Doppler time and slant range", "1")
 

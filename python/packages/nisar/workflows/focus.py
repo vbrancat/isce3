@@ -27,7 +27,7 @@ import nisar
 import numpy as np
 import isce3
 from isce3.core import DateTime, TimeDelta, LUT2d, Attitude, Orbit
-from isce3.focus import make_el_lut, fill_gaps, Notch
+from isce3.focus import make_los_luts, fill_gaps, make_cal_luts, Notch
 from isce3.geometry import los2doppler
 from isce3.io.gdal import Raster, GDT_CFloat32
 from isce3.product import RadarGridParameters
@@ -1629,8 +1629,9 @@ def focus(runconfig, runconfig_path=""):
                                 side, orbit, fc_ref, dop_ref, max_chirplen, dem)
 
     wvl_ref = isce3.core.speed_of_light / fc_ref
-    el_lut = make_el_lut(orbit, attitude, side, dop_ref, wvl_ref, dem,
-                         get_rdr2geo_params(cfg))
+    el_lut, inc_lut, _ = make_los_luts(orbit, attitude, side, dop_ref, wvl_ref,
+                                       dem, get_rdr2geo_params(cfg))
+    beta0_lut, sigma0_lut, gamma0_lut = make_cal_luts(inc_lut)
 
     # Frequency A/B specific setup for output grid, doppler, and blocks.
     ogrid, dop, blocks_bounds = dict(), dict(), dict()
@@ -1735,7 +1736,8 @@ def focus(runconfig, runconfig_path=""):
         # add calibration section for each polarization
         for pol in pols:
             slc.add_calibration_section(frequency, pol, og.sensing_times,
-                                        orbit.reference_epoch, og.slant_ranges)
+                                        orbit.reference_epoch, og.slant_ranges,
+                                        beta0_lut, sigma0_lut, gamma0_lut)
 
 
     freq = next(iter(get_bands(common_mode)))
