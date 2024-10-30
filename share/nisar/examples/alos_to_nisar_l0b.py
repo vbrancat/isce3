@@ -233,6 +233,9 @@ ident_descriptions = {
                  'multiple radar modes, "False" otherwise.',
   'isUrgentObservation': 'Flag indicating if observation is nominal ("False") '
                          'or urgent ("True")',
+  'isJointObservation': '"True" if any portion of this product was acquired in '
+                        'a joint observation mode (e.g., L-band and S-band '
+                        'simultaneously), "False" otherwise',
   'listOfFrequencies': 'List of frequency layers available in the product',
   'lookDirection': 'Look direction, either "Left" or "Right"',
   'missionId': 'Mission identifier',
@@ -278,6 +281,7 @@ def populateIdentification(ident: h5py.Group, ldr: LeaderFile.LeaderFile):
     ident.create_dataset('productVersion', data=numpy.string_("0.1.0"))
     ident.create_dataset('absoluteOrbitNumber', data=numpy.array(0, dtype='u4'))
     ident.create_dataset("isUrgentObservation", data=numpy.string_("False"))
+    ident.create_dataset("isJointObservation", data=numpy.bytes_("False"))
     # shape = numberOfObservations
     ident.create_dataset("plannedObservationId", data=numpy.string_(["0"]))
     # shape = numberOfDatatakes

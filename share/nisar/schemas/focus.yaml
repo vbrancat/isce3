@@ -188,6 +188,8 @@ runconfig:
           range: int(min=0, required=False)
           azimuth: int(min=1, required=False)
 
+        notches: list(include('notch'), required=False)
+
       # Settings for azimuth compression algorithm.
       azcomp:
         # Azimuth compression can be tiled arbitrarily, though
@@ -272,6 +274,11 @@ runconfig:
     # program and which qa option(s) to enable. By default the qa SAS is not run.
     qa: include('qa_options', required=False)
 ---
+notch:
+  frequency: num()
+  bandwidth: num(min=0.0)
+  domain: enum('baseband', 'radio_frequency')
+
 spectral_window:
   kind: enum('Kaiser', 'Cosine', required=False)
   # Shape parameter. For Kaiser, 0 <= shape < Inf.

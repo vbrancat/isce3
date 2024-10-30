@@ -1595,19 +1595,24 @@ class BaseL2WriterSingleInput(BaseWriterSingleInput):
         lines = zero_doppler_h5_dataset.size
         samples = slant_range_h5_dataset.size
 
-        time_spacing = np.average(
-            zero_doppler_h5_dataset[1:-1] - zero_doppler_h5_dataset[0:-2])
-        range_spacing = np.average(
-            slant_range_h5_dataset[1:-1] - slant_range_h5_dataset[0:-2])
+        if len(zero_doppler_h5_dataset) >= 2:
+            time_spacing = np.average(np.diff(zero_doppler_h5_dataset))
+        else:
+            time_spacing = None
 
-        if time_spacing <= 0:
+        if time_spacing is None or time_spacing <= 0:
             error_msg = ('Invalid zero-Doppler time array under'
                          f' {zero_doppler_path}:'
                          f' {zero_doppler_h5_dataset[()]}')
             error_channel.log(error_msg)
             raise RuntimeError(error_msg)
 
-        if range_spacing <= 0:
+        if len(slant_range_h5_dataset) >= 2:
+            range_spacing = np.average(np.diff(slant_range_h5_dataset))
+        else:
+            range_spacing = None
+
+        if range_spacing is None or range_spacing <= 0:
             error_msg = ('Invalid range spacing array under'
                          f' {slant_range_path}: {slant_range_h5_dataset[()]}')
             error_channel.log(error_msg)
@@ -1671,6 +1676,10 @@ class BaseL2WriterSingleInput(BaseWriterSingleInput):
         geo.doppler = zero_doppler
         geo.threshold_geo2rdr = threshold
         geo.numiter_geo2rdr = maxiter
+
+        if (len(zero_doppler_h5_dataset) < 5 or 
+                len(slant_range_h5_dataset) < 5):
+            geo.data_interpolator = 'nearest'
 
         geo.geogrid(metadata_geogrid.start_x,
                     metadata_geogrid.start_y,

@@ -27,7 +27,7 @@ import nisar
 import numpy as np
 import isce3
 from isce3.core import DateTime, TimeDelta, LUT2d, Attitude, Orbit
-from isce3.focus import make_el_lut, fill_gaps
+from isce3.focus import make_el_lut, fill_gaps, Notch
 from isce3.geometry import los2doppler
 from isce3.io.gdal import Raster, GDT_CFloat32
 from isce3.product import RadarGridParameters
@@ -76,6 +76,8 @@ def dump_config(cfg: Struct, stream):
         for k in d:
             if isinstance(d[k], Struct):
                 d[k] = struct2dict(d[k])
+            elif isinstance(d[k], list):
+                d[k] = [struct2dict(v) if isinstance(v, Struct) else v for v in d[k]]
         return d
     parser = YAML()
     parser.indent = 4
@@ -1253,7 +1255,7 @@ def prep_rangecomp(cfg, raw, raw_grid, channel_in, channel_out, cal=None):
     log.info(f"Chirp length = {len(chirp)}")
     win_kind, win_shape = check_window_input(cfg.processing.range_window)
 
-    _, fs, K, _ = raw.getChirpParameters(channel_in.freq_id, tx)
+    fc, fs, K, _ = raw.getChirpParameters(channel_in.freq_id, tx)
 
     if channel_in.band != channel_out.band:
         log.info("Filtering chirp for mixed-mode processing.")
@@ -1309,6 +1311,12 @@ def prep_rangecomp(cfg, raw, raw_grid, channel_in, channel_out, cal=None):
     nr = raw_grid.shape[1]
     na = cfg.processing.rangecomp.block_size.azimuth
     rc = isce3.focus.RangeComp(chirp, nr, maxbatch=na, mode=rcmode)
+
+    for notch_struct in cfg.processing.rangecomp.notches:
+        notch = Notch(**vars(notch_struct))
+        log.info("Applying notch %s", notch)
+        notch = notch.normalized(fs, fc)
+        rc.apply_notch(notch.frequency, notch.bandwidth)
 
     # Rangecomp modifies range grid.  Also update wavelength.
     # Careful that common-band filter delay is only half the filter
@@ -1377,16 +1385,16 @@ def get_identification_data_from_raw(rawlist: list[Raw]) -> dict:
     by combining the relevant identification metadata keys from all raw data
     files in the provided list.
     """
-    def parse_urgent(raw: Raw) -> bool:
-        return raw.identification.isUrgentObservation.lower() == "true"
-
     return dict(
         # L0B always have a single entry
         planned_datatake_id = [raw.identification.plannedDatatake[0]
             for raw in rawlist],
         planned_observation_id = [raw.identification.plannedObservation[0]
             for raw in rawlist],
-        is_urgent = any(parse_urgent(raw) for raw in rawlist)
+        is_urgent = any(raw.identification.isUrgentObservation
+            for raw in rawlist),
+        is_joint = any(raw.identification.isJointObservation
+            for raw in rawlist)
     )
 
 
@@ -1666,7 +1674,7 @@ def focus(runconfig, runconfig_path=""):
     og = next(iter(ogrid.values()))
     start_time = og.sensing_datetime(0)
     end_time = og.sensing_datetime(og.length - 1)
-    granule_id = fill_partial_granule_id(
+    granule_id, is_full_frame, overlap = fill_partial_granule_id(
         cfg.primary_executable.partial_granule_id, common_mode, start_time,
         end_time, shapely.from_geojson(cfg.geometry.track_frame_polygon),
         shapely.from_wkt(polygon),
@@ -1676,6 +1684,8 @@ def focus(runconfig, runconfig_path=""):
     slc.copy_identification(rawlist[0], polygon=polygon,
         start_time=start_time, end_time=end_time,
         frequencies=common_mode.frequencies,
+        is_full_frame=is_full_frame, frame_coverage=overlap,
+        coverage_threshold=cfg.geometry.full_coverage_threshold_percent / 100,
         is_dithered=is_dithered, granule_id=granule_id,
         is_mixed_mode=any(PolChannelSet.from_raw(raw) != common_mode
             for raw in rawlist),
@@ -2034,7 +2044,8 @@ def configure_logging():
     sh.setLevel(log_level)
     sh.setFormatter(fmt)
     log.addHandler(sh)
-    for friend in ("Raw", "SLCWriter", "nisar.antenna.pattern", "rslc_cal"):
+    for friend in ("Raw", "SLCWriter", "nisar.antenna.pattern", "rslc_cal",
+                   "isce3.focus.notch"):
         l = logging.getLogger(friend)
         l.setLevel(log_level)
         l.addHandler(sh)
