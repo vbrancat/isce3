@@ -1205,7 +1205,7 @@ class BaseL2WriterSingleInput(BaseWriterSingleInput):
             near_range_inc_angle_rad, far_range_inc_angle_rad = \
                 get_near_and_far_range_incidence_angles(radar_grid_obj,
                                                         self.orbit)
-            
+
             near_range_inc_angle_deg = np.rad2deg(near_range_inc_angle_rad)
             far_range_inc_angle_deg = np.rad2deg(far_range_inc_angle_rad)
 
