@@ -155,6 +155,20 @@ class GUNWWriter(RUNWWriter, RIFGWriter, L2InSARWriter):
             f"{self.group_paths.ParametersPath}/unwrappedInterferogram"
         self.move(old_igram_group_name, new_igram_group_name)
 
+        for freq, *_ in get_cfg_freq_pols(self.cfg):
+            number_of_azimuth_looks = \
+                self[f'{new_igram_group_name}/frequency{freq}/numberOfAzimuthLooks']
+            number_of_slant_range_looks = \
+                self[f'{new_igram_group_name}/frequency{freq}/numberOfRangeLooks']
+            number_of_azimuth_looks.attrs['description'] = \
+                np.bytes_('Number of looks applied in the'
+                          ' along-track direction to form the'
+                          ' unwrapped interferogram')
+            number_of_slant_range_looks.attrs['description'] = \
+                np.bytes_('Number of looks applied in the'
+                          ' slant range direction to form the'
+                          ' unwrapped interferogram')
+
         # the wrappedInterfergram group under the processingInformation/parameters
         # group is copied from the RIFG product, but the name in RIFG product is
         # 'interferogram', while in GUNW its name is 'wrappedInterferogram'. Here
@@ -203,9 +217,6 @@ class GUNWWriter(RUNWWriter, RIFGWriter, L2InSARWriter):
                 f"{self.ref_rslc.SwathPath}/frequency{freq}"
             ]
 
-            rslc_freq_group.copy("numberOfSubSwaths",
-                                 grids_freq_group)
-
             unwrapped_geogrids = geogrids[freq]
             wrapped_geogrids = wrapped_igram_geogrids[freq]
 
@@ -230,32 +241,44 @@ class GUNWWriter(RUNWWriter, RIFGWriter, L2InSARWriter):
             pixeloffsets_group_name = \
                 f"{grids_freq_group_name}/pixelOffsets"
 
-            unwrapped_group = self.require_group(unwrapped_group_name)
+            # Create the mask layer for each group
+            for ds_group_name, ds_geogrid in zip([unwrapped_group_name,
+                                                  wrapped_group_name,
+                                                  pixeloffsets_group_name],
+                                                 [unwrapped_geogrids,
+                                                  wrapped_geogrids,
+                                                  unwrapped_geogrids]):
 
-            # set the geo information for the mask
-            yds, xds = set_get_geo_info(
-                self,
-                unwrapped_group_name,
-                unwrapped_geogrids,
-            )
+                ds_group = self.require_group(ds_group_name)
 
-            # Create mask only if layover shadow mask is created
-            # or if we have a water mask assigned from runconfig
-            if pcfg['rdr2geo']['write_layover_shadow'] or \
-                    self.cfg['dynamic_ancillary_file_group']['water_mask_file'] is not None:
+                # set the geo information for the mask
+                yds, xds = set_get_geo_info(
+                    self,
+                    ds_group_name,
+                    ds_geogrid,
+                )
+
                 self._create_2d_dataset(
-                    unwrapped_group,
+                    ds_group,
                     "mask",
-                    unwrapped_shape,
+                    (ds_geogrid.length,
+                     ds_geogrid.width),
                     np.uint8,
-                    "Byte layer with flags for various channels"
-                    " (e.g. layover/shadow, data quality)"
-                    ,
-                    Units.dn,
-                    grids_val,
+                    ("Combination of water mask and a mask of subswaths of valid samples"
+                     " in the reference RSLC and geometrically-coregistered secondary RSLC."
+                     " Each pixel value is a three-digit number:"
+                     " the most significant digit represents the water flag of that pixel in the reference RSLC,"
+                     " where 1 is water and 0 is non-water;"
+                     " the second digit represents the subswath number of that pixel in the reference RSLC;"
+                     " the least-significant digit represents the subswath number of that pixel in the secondary RSLC."
+                     " A value of '0' in either subswath digit indicates an invalid sample in the corresponding RSLC"),
+                    grid_mapping=grids_val,
                     xds=xds,
                     yds=yds,
+                    fill_value=255,
                 )
+            ds_group['mask'].attrs['valid_min'] = 0
+            ds_group['mask'].attrs['percentage_water'] = 0.0
 
             for pol in pol_list:
                 unwrapped_pol_name = f"{unwrapped_group_name}/{pol}"

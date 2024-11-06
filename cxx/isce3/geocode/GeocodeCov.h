@@ -586,6 +586,7 @@ private:
      * sub-swath mask raster
      * @param[out] out_mask_array     Output valid-pixels
      * sub-swath mask array
+     * @param[in] interp_margin       Interpolation margin
      */
     template<class T_out>
     inline void _interpolate(const isce3::core::Matrix<T_out>& rdrDataBlock,
@@ -611,7 +612,8 @@ private:
             isce3::product::SubSwaths * sub_swaths,
             bool apply_valid_samples_sub_swath_masking,
             isce3::io::Raster* out_mask,
-            isce3::core::Matrix<uint8_t>& out_mask_array);
+            isce3::core::Matrix<uint8_t>& out_mask_array,
+            const int interp_margin);
 
     /**
      * param[in,out] data a matrix of data that needs to be base-banded in

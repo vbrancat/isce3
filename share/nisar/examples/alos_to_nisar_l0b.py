@@ -233,10 +233,13 @@ ident_descriptions = {
                  'multiple radar modes, "False" otherwise.',
   'isUrgentObservation': 'Flag indicating if observation is nominal ("False") '
                          'or urgent ("True")',
+  'isJointObservation': '"True" if any portion of this product was acquired in '
+                        'a joint observation mode (e.g., L-band and S-band '
+                        'simultaneously), "False" otherwise',
   'listOfFrequencies': 'List of frequency layers available in the product',
-  'lookDirection': 'Look direction can be left or right',
+  'lookDirection': 'Look direction, either "Left" or "Right"',
   'missionId': 'Mission identifier',
-  'orbitPassDirection': 'Orbit direction can be ascending or descending',
+  'orbitPassDirection': 'Orbit direction, either "Ascending" or "Descending"',
   'plannedDatatakeId': 'List of planned datatakes included in the product',
   'plannedObservationId': 'List of planned observations included in the '
                           'product',
@@ -269,15 +272,16 @@ def populateIdentification(ident: h5py.Group, ldr: LeaderFile.LeaderFile):
     ident.create_dataset('diagnosticModeFlag', data=numpy.uint8(0))
     ident.create_dataset('isGeocoded', data=numpy.string_("False"))
     ident.create_dataset('listOfFrequencies', data=numpy.string_(["A"]))
-    ident.create_dataset('lookDirection', data = numpy.string_("right"))
+    ident.create_dataset('lookDirection', data = numpy.string_("Right"))
     ident.create_dataset('missionId', data=numpy.string_("ALOS"))
-    direction = "ascending" if ldr.summary.TimeDirectionIndicatorAlongLine[0] == "A" else "descending"
+    direction = "Ascending" if ldr.summary.TimeDirectionIndicatorAlongLine[0] == "A" else "Descending"
     ident.create_dataset('orbitPassDirection', data=numpy.string_(direction))
     ident.create_dataset('processingType', data=numpy.string_("repackaging"))
     ident.create_dataset('productType', data=numpy.string_("RRSD"))
     ident.create_dataset('productVersion', data=numpy.string_("0.1.0"))
     ident.create_dataset('absoluteOrbitNumber', data=numpy.array(0, dtype='u4'))
     ident.create_dataset("isUrgentObservation", data=numpy.string_("False"))
+    ident.create_dataset("isJointObservation", data=numpy.bytes_("False"))
     # shape = numberOfObservations
     ident.create_dataset("plannedObservationId", data=numpy.string_(["0"]))
     # shape = numberOfDatatakes
@@ -295,7 +299,7 @@ def populateIdentification(ident: h5py.Group, ldr: LeaderFile.LeaderFile):
     ident.create_dataset("isMixedMode", data=numpy.string_("False"))
     ident.create_dataset("processingCenter", data=numpy.string_("JPL"))
     ident.create_dataset("processingDateTime",
-        data=numpy.string_(datetime.datetime.now().isoformat()))
+        data=numpy.string_(datetime.datetime.now(datetime.timezone.utc).isoformat()[:19]))
     ident.create_dataset("productLevel", data=numpy.string_("L0B"))
     ident.create_dataset("productSpecificationVersion",
         data=numpy.string_("0.9.0"))

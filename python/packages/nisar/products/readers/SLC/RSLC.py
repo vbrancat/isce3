@@ -3,14 +3,20 @@ from __future__ import annotations
 
 import h5py
 import journal
+import logging
 import pyre
 import re
 
+from nisar.noise import NoiseEquivalentBackscatterProduct
+from isce3.core import DateTime
 from isce3.core.types import ComplexFloat16Decoder, is_complex32
 
 from .SLCBase import SLCBase
 
 PRODUCT = 'RSLC'
+
+log = logging.getLogger("nisar.products.readers.RSLC")
+
 
 class RSLC(SLCBase, family='nisar.productreader.rslc'):
     """
@@ -111,3 +117,103 @@ class RSLC(SLCBase, family='nisar.productreader.rslc'):
                 raise LookupError(err_str)
 
             return is_complex32(h[slc_path])
+
+
+    def getNoiseEquivalentBackscatter(self, frequency=None, pol=None):
+        '''
+        Extract noise equivalent backscatter product for a particular
+        frequency band and TxRx polarization.  It's conceptually the same as
+        as noise equivalent sigma zero (NESZ) but agnostic with respect to the
+        area normalization convention.
+
+        Parameters
+        ----------
+        frequency : str, optional
+            Frequency band such as 'A', 'B'.
+            Default is the very first one in lexicographical order.
+        pol : str, optional
+            TxRx polarization such as 'HH', 'HV', etc.
+            Default is the first co-pol in frequency if `frequency`
+            otherwise the very first co-pol in very first frequency
+            band. If no co-pol, the first cross-pol product will
+            be picked.
+
+        Returns
+        -------
+        nisar.noise.NoiseEquivalentBackscatterProduct
+
+        '''
+        # set frequency and pol
+        if frequency is None:
+            frequency = self._getFirstFrequency()
+        if pol is None:
+            pols = self.polarizations[frequency]
+            co_pol = [p for p in pols if p[0] == p[1] or p[0] in ('L', 'R')]
+            if len(co_pol) == 0:  # no co-pol
+                pol = pols[0]
+            else:  # there exists a co-pol
+                pol = co_pol[0]
+
+        # Save typing...
+        cal, freq  = self.CalibrationInformationPath, f'frequency{frequency}'
+
+        # Set paths relative to cal group. Support three product spec versions.
+        # Keys correspond to the first tag of the NISAR PIX repo that implements
+        # the given data layout (though v0.0.0 doesn't exist and is just
+        # shorthand for the first ever version).
+        layouts = {
+            "v1.2.0": {
+                "noise": _h5join(cal, freq, "noiseEquivalentBackscatter", pol),
+                "time": _h5join(cal, freq, "noiseEquivalentBackscatter",
+                    "zeroDopplerTime"),
+                "range": _h5join(cal, freq, "noiseEquivalentBackscatter",
+                    "slantRange"),
+            },
+            "v1.0.0": {
+                "noise": _h5join(cal, freq, "nes0", pol),
+                "time": _h5join(cal, freq, "nes0", "zeroDopplerTime"),
+                "range": _h5join(cal, freq, "nes0", "slantRange"),
+            },
+            "v0.0.0": {
+                "noise": _h5join(cal, freq, pol, "nes0"),
+                "time": _h5join(cal, "zeroDopplerTime"),
+                "range": _h5join(cal, "slantRange"),
+            },
+        }
+
+        # parse all fields for NESZ
+        with h5py.File(self.filename, 'r', libver='latest', swmr=True) as fid:
+            for version, paths in layouts.items():
+                if paths["noise"] in fid:
+                    break
+                log.warning("Couldn't find noise with RSLC schema "
+                    f"corresponding to tag {version} of NISAR_PIX.")
+            else:
+                raise IOError("Could not find noise layer in RSLC file.")
+
+            noise = fid[paths["noise"]][:]
+            sr = fid[paths["range"]][:]
+            azt_dset = fid[paths["time"]]
+            azt = azt_dset[:]
+            units = azt_dset.attrs['units'].decode()
+
+        # datetime UTC pattern to look for in units to get epoch
+        dt_pat = re.compile(
+            '[0-9]{4}-[0-9]{2}-[0-9]{2}[T ][0-9]{2}:[0-9]{2}:[0-9]{2}(?:[.][0-9]{0,9})?'
+        )
+        matches = dt_pat.findall(units)
+        if len(matches) != 1:
+            raise RuntimeError(
+                f"missing epoch in zeroDopplerTime units attribute: {units!r}"
+            )
+        utc_str = matches[0]
+        epoch = DateTime(utc_str)
+        # build and return noise product
+        return NoiseEquivalentBackscatterProduct(noise, sr, azt, epoch,
+            frequency, pol)
+
+
+def _h5join(*paths: str) -> str:
+    """Join two paths to be used in HDF5"""
+    # avoid repeated path separators
+    return "/".join(path.rstrip("/") for path in paths)

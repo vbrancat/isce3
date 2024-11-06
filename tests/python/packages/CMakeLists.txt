@@ -10,6 +10,7 @@ isce3/core/llh.py
 isce3/core/poly2d.py
 isce3/core/resample_block_generators.py
 isce3/focus/valid_regions.py
+isce3/focus/notch.py
 isce3/geocode/geocode_slc.py
 isce3/geometry/polygons.py
 isce3/image/resample_slc.py
@@ -34,6 +35,7 @@ nisar/mixed_mode/processing.py
 nisar/noise/noise_estimation_from_raw.py
 nisar/pointing/doppler_lut_from_raw.py
 #nisar/pointing/el_null_range_from_raw_ant.py
+nisar/products/granule_id.py
 nisar/products/readers/antenna_parser.py
 nisar/products/readers/attitude.py
 nisar/products/readers/GSLC.py
@@ -67,6 +69,8 @@ nisar/workflows/resample_slc.py
 nisar/workflows/resample_slc_v2.py
 nisar/workflows/unwrap.py
 nisar/workflows/point_target_analysis.py
+nisar/workflows/nisar_l0b_dm1_to_science.py
+nisar/workflows/nisar_l0b_dm2_to_dbf.py
 nisar/workflows/noise_estimator.py
 nisar/workflows/pol_channel_imbalance_from_rslc.py
 nisar/workflows/geocode_corrections.py

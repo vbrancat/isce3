@@ -19,7 +19,7 @@ from nisar.products.readers.orbit import load_orbit_from_xml
 from nisar.workflows.compute_stats import compute_stats_complex_data
 from nisar.workflows.h5_prep import (add_radar_grid_cubes_to_hdf5,
                                      prep_gslc_dataset)
-from nisar.workflows.geocode_corrections import get_az_srg_corrections, get_offset_luts
+from nisar.workflows.geocode_corrections import AzSrgCorrections
 from nisar.workflows.gslc_runconfig import GSLCRunConfig
 from nisar.workflows.yaml_argparse import YamlArgparse
 from nisar.products.writers import GslcWriter
@@ -37,13 +37,14 @@ def run(cfg):
     radar_grid_cubes_geogrid = cfg['processing']['radar_grid_cubes']['geogrid']
     radar_grid_cubes_heights = cfg['processing']['radar_grid_cubes']['heights']
     dem_file = cfg['dynamic_ancillary_file_group']['dem_file']
+    tec_file = cfg['dynamic_ancillary_file_group']['tec_file']
     orbit_file = cfg["dynamic_ancillary_file_group"]['orbit_file']
     threshold_geo2rdr = cfg['processing']['geo2rdr']['threshold']
     iteration_geo2rdr = cfg['processing']['geo2rdr']['maxiter']
     columns_per_block = cfg['processing']['blocksize']['x']
     lines_per_block = cfg['processing']['blocksize']['y']
     flatten = cfg['processing']['flatten']
-    
+
     output_options = cfg['output']
     geogrid_expansion_threshold = 100
     apply_data_driven_correction = cfg['dynamic_ancillary_file_group']['reference_gslc'] is not None
@@ -62,10 +63,10 @@ def run(cfg):
         # orbit has not frequency dependency.
         external_orbit = load_orbit_from_xml(orbit_file,
                                              slc.getRadarGrid().ref_epoch)
-        
+
         # Apply 2 mins of padding before / after sensing period when cropping
         # the external orbit.
-        # 2 mins of margin is based on the number of IMAGEN TEC samples required for 
+        # 2 mins of margin is based on the number of IMAGEN TEC samples required for
         # TEC computation, with few more safety margins for possible needs in the future.
         #
         # `7` in the line below is came from the default value for `npad` in
@@ -95,11 +96,17 @@ def run(cfg):
         # Decide what page size to use based on geogrid shape.
         # If user provides the page size, then the workflow takes that value.
         # Otherwise, the workflow decides the pagesize automatically.
-        output_gslc_shape = (geogrids['A'].length,
-                             geogrids['A'].width)
+
+        geogrid_freq_and_size = ((geogrid[0], geogrid[1].length * geogrid[1].width) for
+                                 geogrid in geogrids.items())
+
+        smallest_freq = min(geogrid_freq_and_size, key=lambda x: x[1])[0]
+
+        output_gslc_shape = (geogrids[smallest_freq].length,
+                             geogrids[smallest_freq].width)
         optimal_chunk_size = optimize_chunk_size(output_options['chunk_size'],
                                                  output_gslc_shape)
-        
+
         # Populate `fs_page_size` in file space argument dict.
         # Determine the page size. Use the value provided by the user if available;
         # otherwise, automatically calculate it based on the memory footprint of the chunk.
@@ -130,9 +137,14 @@ def run(cfg):
             native_doppler = slc.getDopplerCentroid(frequency=freq)
 
             # get azimuth and slant range geocoding corrections
-            az_correction, srg_correction = \
-                get_offset_luts(cfg, slc, freq, orbit) if apply_data_driven_correction \
-                else get_az_srg_corrections(cfg, slc, freq, orbit)
+            az_srg_corrections = AzSrgCorrections(cfg, slc, freq, orbit)
+            az_correction = az_srg_corrections.az_correction_lut
+            srg_correction = az_srg_corrections.slant_range_correction_lut
+
+            # write corrections to HDF5
+            proc_info_path = "/science/LSAR/GSLC/metadata/processingInformation"
+            proc_info_group = dst_h5.require_group(proc_info_path)
+            az_srg_corrections.write_corrections_hdf5(proc_info_group)
 
             # get subswaths for current freq SLC from its Swath
             sub_swaths = isce3.product.Swath(input_hdf5, freq).sub_swaths()
@@ -186,13 +198,14 @@ def run(cfg):
                 mask_data_blk = np.full(geo_blk_shape, 255, dtype=np.ubyte)
 
                 # run geocodeSlc
-                isce3.geocode.geocode_slc(gslc_data_blks, mask_data_blk, rslc_data_blks,
+                isce3.geocode.geocode_slc(gslc_data_blks, rslc_data_blks,
                                           dem_raster, radar_grid, blk_geo_grid,
                                           orbit, native_doppler,
                                           image_grid_doppler, ellipsoid,
                                           threshold_geo2rdr,
                                           iteration_geo2rdr,
-                                          radar_grid,
+                                          sliced_radargrid=radar_grid,                                           
+                                          mask_block=mask_data_blk,
                                           first_azimuth_line=az_first,
                                           first_range_sample=rg_first,
                                           flatten=flatten,
